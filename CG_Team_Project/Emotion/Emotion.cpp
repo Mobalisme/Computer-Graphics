@@ -832,9 +832,6 @@ int main(int argc, char** argv)
     if (!LoadWallTexture())
         std::cerr << "벽 텍스처 로드 실패. 텍스처 없이 실행합니다.\n";
 
-    // 마우스는 더 이상 사용하지 않으므로 커서도 숨기지 않아도 됨
-    // glutSetCursor(GLUT_CURSOR_NONE);
-
     glutDisplayFunc(DisplayCallback);
     glutReshapeFunc(ReshapeCallback);
     glutKeyboardFunc(KeyboardDown);
