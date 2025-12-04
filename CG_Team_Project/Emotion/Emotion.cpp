@@ -1,17 +1,17 @@
 ﻿// Emotion.cpp
 
 #include <iostream>
-#include <random>
 #include <vector>
+#include <queue>
 #include <algorithm>
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
+#include <random>
 
 #include <GL/freeglut.h>
 #include <GL/glu.h>
 
-// stb_image: 이 cpp 한 군데에서만 IMPLEMENTATION 정의
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -22,8 +22,8 @@
 const int MAZE_W = 25;   // 반드시 홀수
 const int MAZE_H = 25;   // 반드시 홀수
 
-const int CELL_W = (MAZE_W - 1) / 2; // 논리적 셀 개수 (가로)
-const int CELL_H = (MAZE_H - 1) / 2; // 논리적 셀 개수 (세로)
+const int CELL_W = (MAZE_W - 1) / 2;
+const int CELL_H = (MAZE_H - 1) / 2;
 
 const int WALL = 1;
 const int PATH = 0;
@@ -38,11 +38,10 @@ std::mt19937 rng;
 int winWidth = 800;
 int winHeight = 800;
 
-// 셀 크기 및 벽 높이
 float cellSize = 1.0f;
 float wallHeight = 1.6f;
 
-// 플레이어 카메라 위치 (1,1셀 중앙에서 시작)
+// 플레이어 위치 (1,1 셀 중심)
 float camX = 1.5f;
 float camY = 0.8f;
 float camZ = 1.5f;
@@ -50,72 +49,60 @@ float camZ = 1.5f;
 float camYaw = 0.0f;   // 좌우 회전 (라디안)
 float camPitch = 0.0f;   // 상하 회전 (라디안)
 
-const float MOVE_SPEED = 2.0f;     // m/s
-const float TURN_SPEED_MOUSE = 0.0025f;  // 마우스 회전 속도
+const float MOVE_SPEED = 2.0f;
+const float TURN_SPEED_MOUSE = 0.0025f;
+
+// 점프 관련
+float camVelY = 0.0f;
+bool  isOnGround = true;
+const float BASE_CAM_Y = 0.8f;   // 평소 카메라 높이
+const float GRAVITY = -9.8f; // 아래 방향
+const float JUMP_SPEED = 4.5f;  // 점프 초기 속도
 
 bool keyDown[256] = { false };
 
-// 마우스 래핑용
+// 마우스 warpPointer용
 bool warpInProgress = false;
 
 // ================== 텍스처 ==================
 
 GLuint g_wallTex = 0;
 
+// ================== 방향 구조체 ==================
+
+struct Dir { int dx, dy; };
+
+const Dir dirs4[4] = {
+    { 0, -1 }, { 0,  1 }, { -1, 0 }, { 1,  0 }
+};
+
 // ================== 랜덤 / 초기화 ==================
 
 void InitRandom()
 {
     std::random_device rd;
-    rng.seed(rd());   // 매번 다른 미로
-    // rng.seed(1234); // 같은 미로 보고 싶으면 고정
-}
-
-int RandInt(int a, int b)
-{
-    std::uniform_int_distribution<int> dist(a, b);
-    return dist(rng);
+    rng.seed(rd());
 }
 
 void InitMazeData()
 {
-    // 전부 벽으로 채우기
     for (int y = 0; y < MAZE_H; ++y)
-    {
         for (int x = 0; x < MAZE_W; ++x)
-        {
             maze[y][x] = WALL;
-        }
-    }
 
-    // 셀 방문 배열 초기화
     for (int cy = 0; cy < CELL_H; ++cy)
-    {
         for (int cx = 0; cx < CELL_W; ++cx)
-        {
             visitedCell[cy][cx] = false;
-        }
-    }
 }
 
-// 논리 셀 → 실제 좌표 PATH 열기
 void OpenCell(int cx, int cy)
 {
-    int x = 2 * cx + 1; // 홀수
-    int y = 2 * cy + 1; // 홀수
+    int x = 2 * cx + 1;
+    int y = 2 * cy + 1;
     maze[y][x] = PATH;
 }
 
 // ================== DFS 미로 생성 ==================
-
-struct Dir { int dx, dy; };
-
-const Dir dirs4[4] = {
-    { 0, -1 }, // 위
-    { 0,  1 }, // 아래
-    { -1, 0 }, // 왼
-    { 1,  0 }  // 오
-};
 
 void ShuffleDirs(std::vector<int>& order)
 {
@@ -127,7 +114,11 @@ void GenerateMazeDFS(int cx, int cy)
     visitedCell[cy][cx] = true;
     OpenCell(cx, cy);
 
-    std::vector<int> order = { 0, 1, 2, 3 };
+    std::vector<int> order;
+    order.push_back(0);
+    order.push_back(1);
+    order.push_back(2);
+    order.push_back(3);
     ShuffleDirs(order);
 
     for (int i = 0; i < 4; ++i)
@@ -160,38 +151,31 @@ void GenerateMazeDFS(int cx, int cy)
 
 void AddEntranceExit()
 {
-    // 입구: 왼쪽 벽
-    maze[1][0] = PATH;                        // (x=0, y=1)
-    // 출구: 오른쪽 벽
-    maze[MAZE_H - 2][MAZE_W - 1] = PATH;      // (x=MAZE_W-1, y=MAZE_H-2)
+    maze[1][0] = PATH;                               // 입구
+    maze[MAZE_H - 2][MAZE_W - 1] = PATH;             // 출구
 }
 
 void GenerateMaze()
 {
     InitRandom();
     InitMazeData();
-
-    int startCx = 0;
-    int startCy = 0;
-    GenerateMazeDFS(startCx, startCy);
-
+    GenerateMazeDFS(0, 0);
     AddEntranceExit();
 }
 
 // ================== 텍스처 로드 ==================
 
-// 작업 디렉터리가 어디냐에 따라 몇 가지 후보 경로를 시도
 bool LoadWallTexture()
 {
-    const char* candidates[] = {
-        "Textures/wall.png",     // 작업 디렉터리가 프로젝트 루트일 때
-        "../Textures/wall.png",  // 작업 디렉터리가 Debug/ 또는 Release/일 때
-        "wall.png"               // exe 옆에 둘 경우
+    const char* candidates[3] = {
+        "Textures/wall.png",
+        "../Textures/wall.png",
+        "wall.png"
     };
 
     int w = 0, h = 0, channels = 0;
-    unsigned char* data = nullptr;
-    const char* usedPath = nullptr;
+    unsigned char* data = 0;
+    const char* usedPath = 0;
 
     for (int i = 0; i < 3; ++i)
     {
@@ -205,10 +189,7 @@ bool LoadWallTexture()
 
     if (!data)
     {
-        std::cerr << "Failed to load wall texture. Tried:\n"
-            << "  Textures/wall.png\n"
-            << "  ../Textures/wall.png\n"
-            << "  wall.png\n";
+        std::cerr << "Failed to load wall texture.\n";
         return false;
     }
 
@@ -226,12 +207,9 @@ bool LoadWallTexture()
     glGenTextures(1, &g_wallTex);
     glBindTexture(GL_TEXTURE_2D, g_wallTex);
 
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, format,
-        w, h, 0, format, GL_UNSIGNED_BYTE, data
-    );
+    glTexImage2D(GL_TEXTURE_2D, 0, format,
+        w, h, 0, format, GL_UNSIGNED_BYTE, data);
 
-    // mipmap 없이 간단한 필터 사용
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -250,7 +228,7 @@ bool LoadWallTexture()
 bool IsWallCell(int gx, int gz)
 {
     if (gx < 0 || gx >= MAZE_W || gz < 0 || gz >= MAZE_H)
-        return true; // 바깥은 벽 취급
+        return true;
     return (maze[gz][gx] == WALL);
 }
 
@@ -258,10 +236,10 @@ bool IsBlocked(float x, float z)
 {
     float radius = 0.2f;
 
-    int left = int((x - radius) / cellSize);
-    int right = int((x + radius) / cellSize);
-    int top = int((z - radius) / cellSize);
-    int bottom = int((z + radius) / cellSize);
+    int left = (int)((x - radius) / cellSize);
+    int right = (int)((x + radius) / cellSize);
+    int top = (int)((z - radius) / cellSize);
+    int bottom = (int)((z + radius) / cellSize);
 
     if (IsWallCell(left, top) ||
         IsWallCell(right, top) ||
@@ -272,7 +250,7 @@ bool IsBlocked(float x, float z)
     return false;
 }
 
-// ================== 렌더링 ==================
+// ================== 렌더링: 벽/바닥 ==================
 
 void DrawWallBlock(float gx, float gz)
 {
@@ -291,25 +269,25 @@ void DrawWallBlock(float gx, float gz)
 
     glBegin(GL_QUADS);
 
-    // 앞면 (z = z0)
+    // 앞면
     glTexCoord2f(0.0f, 0.0f);   glVertex3f(x0, y0, z0);
     glTexCoord2f(repeat, 0.0f);   glVertex3f(x1, y0, z0);
     glTexCoord2f(repeat, repeat);    glVertex3f(x1, y1, z0);
     glTexCoord2f(0.0f, repeat);     glVertex3f(x0, y1, z0);
 
-    // 뒷면 (z = z1)
+    // 뒷면
     glTexCoord2f(0.0f, 0.0f);   glVertex3f(x1, y0, z1);
     glTexCoord2f(repeat, 0.0f);   glVertex3f(x0, y0, z1);
     glTexCoord2f(repeat, repeat);    glVertex3f(x0, y1, z1);
     glTexCoord2f(0.0f, repeat);     glVertex3f(x1, y1, z1);
 
-    // 왼쪽 면 (x = x0)
+    // 왼쪽
     glTexCoord2f(0.0f, 0.0f);   glVertex3f(x0, y0, z1);
     glTexCoord2f(repeat, 0.0f);   glVertex3f(x0, y0, z0);
     glTexCoord2f(repeat, repeat);    glVertex3f(x0, y1, z0);
     glTexCoord2f(0.0f, repeat);     glVertex3f(x0, y1, z1);
 
-    // 오른쪽 면 (x = x1)
+    // 오른쪽
     glTexCoord2f(0.0f, 0.0f);   glVertex3f(x1, y0, z0);
     glTexCoord2f(repeat, 0.0f);   glVertex3f(x1, y0, z1);
     glTexCoord2f(repeat, repeat);    glVertex3f(x1, y1, z1);
@@ -341,20 +319,13 @@ void DrawMaze3D()
     DrawFloor();
 
     for (int z = 0; z < MAZE_H; ++z)
-    {
         for (int x = 0; x < MAZE_W; ++x)
-        {
             if (maze[z][x] == WALL)
-            {
                 DrawWallBlock((float)x, (float)z);
-            }
-        }
-    }
-
-    // SOR 오브젝트(감정)는 DisplayCallback에서 따로 렌더링
 }
 
-// 오른쪽 위 미니맵
+// ================== 미니맵 ==================
+
 void DrawMiniMap()
 {
     glMatrixMode(GL_PROJECTION);
@@ -386,7 +357,7 @@ void DrawMiniMap()
     glVertex2f(ox - 2, oy + mapSize + 2);
     glEnd();
 
-    // 미로 벽
+    // 벽(흰색)
     glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
     for (int z = 0; z < MAZE_H; ++z)
@@ -409,7 +380,37 @@ void DrawMiniMap()
     }
     glEnd();
 
-    // 플레이어 위치
+    // SOR 오브젝트들 (노란 사각형)
+    glColor3f(1.0f, 1.0f, 0.0f);
+    glBegin(GL_QUADS);
+    for (std::size_t i = 0; i < g_worldObjects.size(); ++i)
+    {
+        const GameObject& obj = g_worldObjects[i];
+        if (obj.collected)
+            continue;
+
+        float gx = obj.mazeX + 0.5f;
+        float gz = obj.mazeY + 0.5f;
+
+        float cx = ox + gx * cellW;
+        float cy = oy + gz * cellH;
+
+        float half = cellW < cellH ? cellW : cellH;
+        half *= 0.25f;
+
+        float x0 = cx - half;
+        float y0 = cy - half;
+        float x1 = cx + half;
+        float y1 = cy + half;
+
+        glVertex2f(x0, y0);
+        glVertex2f(x1, y0);
+        glVertex2f(x1, y1);
+        glVertex2f(x0, y1);
+    }
+    glEnd();
+
+    // 플레이어 위치 (빨간 점)
     float px = camX / (MAZE_W * cellSize);
     float pz = camZ / (MAZE_H * cellSize);
 
@@ -436,7 +437,20 @@ void DrawMiniMap()
     glMatrixMode(GL_MODELVIEW);
 }
 
-// ================== 카메라 / 입력 ==================
+// ================== 카메라 이동 / 점프 ==================
+
+void UpdateJump(float dt)
+{
+    camVelY += GRAVITY * dt;
+    camY += camVelY * dt;
+
+    if (camY <= BASE_CAM_Y)
+    {
+        camY = BASE_CAM_Y;
+        camVelY = 0.0f;
+        isOnGround = true;
+    }
+}
 
 void UpdateCamera(float dt)
 {
@@ -489,12 +503,74 @@ void UpdateCamera(float dt)
     }
 }
 
+// ================== 감정 오브젝트 습득 ==================
+
+void TryCollectObject()
+{
+    float px = camX;
+    float pz = camZ;
+
+    float radius = 1.0f;              // 1m 안에 있으면 습득 가능
+    float radius2 = radius * radius;
+
+    int bestIndex = -1;
+
+    for (int i = 0; i < (int)g_worldObjects.size(); ++i)
+    {
+        GameObject& obj = g_worldObjects[i];
+        if (obj.collected)
+            continue;
+
+        float ox = (obj.mazeX + 0.5f) * cellSize;
+        float oz = (obj.mazeY + 0.5f) * cellSize;
+
+        float dx = ox - px;
+        float dz = oz - pz;
+        float dist2 = dx * dx + dz * dz;
+
+        if (dist2 <= radius2)
+        {
+            radius2 = dist2;
+            bestIndex = i;
+        }
+    }
+
+    if (bestIndex != -1)
+    {
+        g_worldObjects[bestIndex].collected = true;
+        std::cout << "감정을 습득했습니다! index = "
+            << bestIndex << std::endl;
+    }
+    else
+    {
+        std::cout << "주변에 습득할 감정 오브젝트가 없습니다.\n";
+    }
+}
+
+// ================== 입력 콜백 ==================
+
 void KeyboardDown(unsigned char key, int, int)
 {
-    if (key == 27) // ESC
+    if (key == 27)   // ESC
+    {
         std::exit(0);
-
-    keyDown[key] = true;
+    }
+    else if (key == ' ')   // 점프
+    {
+        if (isOnGround)
+        {
+            camVelY = JUMP_SPEED;
+            isOnGround = false;
+        }
+    }
+    else if (key == 'r' || key == 'R')   // 감정 습득
+    {
+        TryCollectObject();
+    }
+    else
+    {
+        keyDown[key] = true; // WASD 등 이동 키
+    }
 }
 
 void KeyboardUp(unsigned char key, int, int)
@@ -529,9 +605,166 @@ void MouseMotionCallback(int x, int y)
 
 void ReshapeCallback(int w, int h)
 {
-    winWidth = (w > 1) ? w : 1;
-    winHeight = (h > 1) ? h : 1;
+    if (w <= 0) w = 1;
+    if (h <= 0) h = 1;
+
+    winWidth = w;
+    winHeight = h;
+
     glViewport(0, 0, winWidth, winHeight);
+}
+
+// ================== BFS로 입구→출구 최단 경로 ==================
+
+struct Cell
+{
+    int x;
+    int z;
+};
+
+bool BuildPathEntranceToExit(std::vector<Cell>& outPath)
+{
+    int startX = 1;
+    int startZ = 1;
+    int endX = MAZE_W - 2;
+    int endZ = MAZE_H - 2;
+
+    bool visited[MAZE_H][MAZE_W];
+    int  prevX[MAZE_H][MAZE_W];
+    int  prevZ[MAZE_H][MAZE_W];
+
+    for (int z = 0; z < MAZE_H; ++z)
+    {
+        for (int x = 0; x < MAZE_W; ++x)
+        {
+            visited[z][x] = false;
+            prevX[z][x] = -1;
+            prevZ[z][x] = -1;
+        }
+    }
+
+    std::queue<Cell> q;
+    q.push(Cell{ startX, startZ });
+    visited[startZ][startX] = true;
+
+    bool found = false;
+
+    while (!q.empty())
+    {
+        Cell c = q.front();
+        q.pop();
+
+        if (c.x == endX && c.z == endZ)
+        {
+            found = true;
+            break;
+        }
+
+        for (int i = 0; i < 4; ++i)
+        {
+            int nx = c.x + dirs4[i].dx;
+            int nz = c.z + dirs4[i].dy;
+
+            if (nx < 0 || nx >= MAZE_W || nz < 0 || nz >= MAZE_H)
+                continue;
+
+            if (visited[nz][nx])
+                continue;
+
+            if (maze[nz][nx] != PATH)
+                continue;
+
+            visited[nz][nx] = true;
+            prevX[nz][nx] = c.x;
+            prevZ[nz][nx] = c.z;
+
+            q.push(Cell{ nx, nz });
+        }
+    }
+
+    if (!found)
+        return false;
+
+    int cx = endX;
+    int cz = endZ;
+    outPath.clear();
+
+    while (!(cx == startX && cz == startZ))
+    {
+        Cell c;
+        c.x = cx;
+        c.z = cz;
+        outPath.push_back(c);
+
+        int px = prevX[cz][cx];
+        int pz = prevZ[cz][cx];
+
+        cx = px;
+        cz = pz;
+    }
+
+    outPath.push_back(Cell{ startX, startZ });
+
+    std::reverse(outPath.begin(), outPath.end());
+    return true;
+}
+
+// ================== 감정(SOR 오브젝트) 경로 위에 배치 ==================
+
+void InitEmotionObjects()
+{
+    int modelIndex = LoadAndRegisterModel("model_data.txt");
+    if (modelIndex < 0)
+    {
+        std::cout << "[Emotion] SOR 모델 로드 실패.\n";
+        return;
+    }
+
+    std::vector<Cell> path;
+    if (!BuildPathEntranceToExit(path))
+    {
+        std::cout << "[Emotion] 미로 경로를 찾지 못했습니다.\n";
+        return;
+    }
+
+    const int EMOTION_COUNT = 5;
+    if ((int)path.size() < EMOTION_COUNT + 2)
+    {
+        std::cout << "[Emotion] 경로가 너무 짧습니다.\n";
+        return;
+    }
+
+    for (int i = 0; i < EMOTION_COUNT; ++i)
+    {
+        float t = (float)(i + 1) / (float)(EMOTION_COUNT + 1);
+        int idx = (int)(t * (path.size() - 1));
+
+        if (idx < 0) idx = 0;
+        if (idx >= (int)path.size()) idx = (int)path.size() - 1;
+
+        Cell c = path[idx];
+
+        float height = 2.0f;
+        float scale = 0.6f;
+        float baseAngle = 0.0f;
+        float rotSpeed = 1.0f + 0.3f * i;
+        float floatSpeed = 0.05f + 0.01f * i;
+        float floatRange = 0.3f;
+
+        AddObjectGrid(
+            modelIndex,
+            c.x, c.z,
+            height,
+            scale,
+            baseAngle,
+            rotSpeed,
+            floatSpeed,
+            floatRange
+        );
+    }
+
+    std::cout << "[Emotion] 감정 오브젝트 " << EMOTION_COUNT
+        << "개 경로 위에 배치 완료.\n";
 }
 
 // ================== 디스플레이 / 타이머 ==================
@@ -564,18 +797,16 @@ void DisplayCallback()
     glEnable(GL_TEXTURE_2D);
     DrawMaze3D();
 
-    // SOR 오브젝트(= 감정들) 렌더링
-    DrawSORObjects(cellSize);
+    DrawSORObjects(cellSize);   // 감정 오브젝트
 
-    // 2D 미니맵
-    DrawMiniMap();
+    DrawMiniMap();              // 미니맵
 
     glutSwapBuffers();
 }
 
 void IdleCallback()
 {
-    int  now = glutGet(GLUT_ELAPSED_TIME);
+    int now = glutGet(GLUT_ELAPSED_TIME);
     float dt = (now - lastTime) / 1000.0f;
     if (dt < 0.0f) dt = 0.0f;
     if (dt > 0.1f) dt = 0.1f;
@@ -583,6 +814,7 @@ void IdleCallback()
     lastTime = now;
 
     UpdateCamera(dt);
+    UpdateJump(dt);
 
     glutPostRedisplay();
 }
@@ -591,27 +823,23 @@ void IdleCallback()
 
 int main(int argc, char** argv)
 {
-    GenerateMaze();       // 미로 생성
+    GenerateMaze();
 
-    // SOR 오브젝트용 랜덤 위상 초기화
-    std::srand((unsigned int)std::time(nullptr));
-    InitGameObjects();    // SOR 모델 로드 + 감정 오브젝트 배치
+    std::srand((unsigned int)std::time(0));
+    InitEmotionObjects();   // 감정 배치
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(winWidth, winHeight);
-    glutCreateWindow("Emotion Maze");
+    glutCreateWindow("Emotion Maze with SOR Emotions");
 
     glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
 
     if (!LoadWallTexture())
-    {
         std::cerr << "벽 텍스처 로드 실패. 텍스처 없이 실행합니다.\n";
-    }
 
-    // 마우스 커서 숨기기 + 중앙으로 고정
     glutSetCursor(GLUT_CURSOR_NONE);
     warpInProgress = true;
     glutWarpPointer(winWidth / 2, winHeight / 2);
