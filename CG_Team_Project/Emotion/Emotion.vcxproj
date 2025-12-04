@@ -76,12 +76,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\CG_Team_Project\freeglut-3.2.1_artech\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Computer-Graphics\CG_Team_Project\freeglut-3.2.1_artech\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\CG_Team_Project\freeglut-3.2.1_artech\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Computer-Graphics\CG_Team_Project\freeglut-3.2.1_artech\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
