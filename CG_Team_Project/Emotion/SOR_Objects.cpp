@@ -41,7 +41,7 @@ int LoadAndRegisterModel(const char* filename)
         for (int j = 0; j < cols; ++j)
         {
             ModelPoint p;
-            // SOR_Test01.cpp Export 포맷: x y z r g b a
+            // 파일 포맷: x y z r g b a
             fin >> p.x >> p.y >> p.z >> p.r >> p.g >> p.b >> p.a;
             if (!fin)
             {
@@ -54,9 +54,11 @@ int LoadAndRegisterModel(const char* filename)
 
     g_loadedModels.push_back(model);
     int idx = (int)g_loadedModels.size() - 1;
+
     std::cout << "[SOR] 모델 로드 완료: " << filename
         << " (rows=" << rows << ", cols=" << cols
         << ", index=" << idx << ")\n";
+
     return idx;
 }
 
@@ -88,9 +90,7 @@ void AddObjectGrid(
     obj.baseAltitude = height;
     obj.floatSpeed = floatSpeed;
     obj.floatRange = floatRange;
-
-    // 랜덤 위상 (각 감정이 다른 타이밍으로 떠다니게)
-    obj.floatPhase = (float)(std::rand() % 100) * 0.1f;
+    obj.floatPhase = (float)(std::rand() % 100) * 0.1f; // 랜덤 위상
 
     obj.collected = false;
 
@@ -143,13 +143,13 @@ void DrawSORObjects(float cellSize)
     if (g_worldObjects.empty())
         return;
 
-    glDisable(GL_TEXTURE_2D); // 텍스처 끄고 색상만 사용
+    glDisable(GL_TEXTURE_2D);
 
-    for (std::size_t i = 0; i < g_worldObjects.size(); ++i)
+    for (int i = 0; i < (int)g_worldObjects.size(); ++i)
     {
         GameObject& obj = g_worldObjects[i];
         if (obj.collected)
-            continue;  // 이미 습득한 감정은 그리지 않음
+            continue;
 
         if (obj.modelIndex < 0 ||
             obj.modelIndex >= (int)g_loadedModels.size())
@@ -159,7 +159,7 @@ void DrawSORObjects(float cellSize)
 
         // 위아래 떠다니는 오프셋
         obj.floatPhase += obj.floatSpeed;
-        float floatOffset = std::sin(obj.floatPhase) * obj.floatRange;
+        float floatOffset = (float)std::sin(obj.floatPhase) * obj.floatRange;
 
         float worldX = (obj.mazeX + 0.5f) * cellSize;
         float worldY = obj.baseAltitude + floatOffset;
@@ -179,5 +179,5 @@ void DrawSORObjects(float cellSize)
         glPopMatrix();
     }
 
-    glEnable(GL_TEXTURE_2D); // 다시 텍스처 켜기
+    glEnable(GL_TEXTURE_2D);
 }

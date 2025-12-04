@@ -8,6 +8,9 @@
 #include <ctime>
 #include <cstdlib>
 #include <random>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 #include <GL/freeglut.h>
 #include <GL/glu.h>
@@ -16,6 +19,7 @@
 #include "stb_image.h"
 
 #include "SOR_Objects.h"
+#include "Model.h"
 
 // ================== 미로 설정 ==================
 
@@ -55,24 +59,44 @@ float camYaw = 0.0f;   // 좌우 회전 (라디안)
 float camPitch = 0.0f;   // 상하 회전 (라디안)
 
 const float MOVE_SPEED = 2.0f;  // m/s
-const float TURN_SPEED_KEY = 1.5f;  // 방향키로 회전 속도 (rad/s)
+const float TURN_SPEED_KEY = 1.5f;  // 방향키 회전 속도 (rad/s)
 
-// 점프 관련
+// 점프
 float camVelY = 0.0f;
 bool  isOnGround = true;
 const float BASE_CAM_Y = 0.8f;
 const float GRAVITY = -9.8f;
 const float JUMP_SPEED = 4.5f;
 
-bool keyDown[256] = { false }; // WASD, etc.
+// WASD 키 상태
+bool keyDown[256] = { false };
 
 // 방향키 상태
 enum { ARROW_LEFT = 0, ARROW_RIGHT, ARROW_UP, ARROW_DOWN };
 bool arrowDown[4] = { false, false, false, false };
 
+// ================== 배(보트) 관련 ==================
+
+// 배를 둘 미로 격자 위치
+const int BOAT_GRID_X = 5;
+const int BOAT_GRID_Z = 5;
+
+float g_boatPosX = 0.0f;
+float g_boatPosY = 0.0f;
+float g_boatPosZ = 0.0f;
+float g_boatRadius = 2.0f;
+bool  g_boatPlaced = false;
+
+int   g_collectedCount = 0; // 감정 습득 개수
+bool  g_onBoat = false;
+
 // ================== 텍스처 ==================
 
 GLuint g_wallTex = 0;
+
+// ================== 시간 ==================
+
+int lastTime = 0;
 
 // ================== 랜덤 / 미로 생성 ==================
 
@@ -149,12 +173,44 @@ void AddEntranceExit()
     maze[MAZE_H - 2][MAZE_W - 1] = PATH;             // 출구
 }
 
+// 배 주변을 PATH로 비워주기 (벽이랑 겹치지 않게)
+void ClearBoatArea()
+{
+    for (int dz = -1; dz <= 1; ++dz)
+    {
+        for (int dx = -1; dx <= 1; ++dx)
+        {
+            int x = BOAT_GRID_X + dx;
+            int z = BOAT_GRID_Z + dz;
+
+            if (x > 0 && x < MAZE_W - 1 &&
+                z > 0 && z < MAZE_H - 1)
+            {
+                maze[z][x] = PATH;
+            }
+        }
+    }
+}
+
 void GenerateMaze()
 {
     InitRandom();
     InitMazeData();
     GenerateMazeDFS(0, 0);
     AddEntranceExit();
+    ClearBoatArea();
+}
+
+// ================== 배 위치 초기화 ==================
+
+void InitBoatPosition()
+{
+    g_boatPosX = (BOAT_GRID_X + 0.5f) * cellSize;
+    g_boatPosZ = (BOAT_GRID_Z + 0.5f) * cellSize;
+    g_boatPosY = 0.0f;
+
+    g_boatRadius = 2.0f;   // 배 OBJ 크기에 맞게 필요하면 조절
+    g_boatPlaced = true;
 }
 
 // ================== 텍스처 로드 ==================
@@ -167,7 +223,7 @@ bool LoadWallTexture()
         "wall.png"
     };
 
-    int w = 0, h = 0, channels = 0;
+    int   w = 0, h = 0, channels = 0;
     unsigned char* data = 0;
     const char* usedPath = 0;
 
@@ -240,6 +296,17 @@ bool IsBlocked(float x, float z)
         IsWallCell(left, bottom) ||
         IsWallCell(right, bottom))
         return true;
+
+    // 배 충돌 (배 위에 올라간 상태가 아니라면 배 안으로 못 들어감)
+    if (g_boatPlaced && !g_onBoat)
+    {
+        float dx = x - g_boatPosX;
+        float dz = z - g_boatPosZ;
+        float dist2 = dx * dx + dz * dz;
+
+        if (dist2 < g_boatRadius * g_boatRadius)
+            return true;
+    }
 
     return false;
 }
@@ -377,7 +444,7 @@ void DrawMiniMap()
     // SOR 오브젝트 (노란 사각형)
     glColor3f(1.0f, 1.0f, 0.0f);
     glBegin(GL_QUADS);
-    for (std::size_t i = 0; i < g_worldObjects.size(); ++i)
+    for (int i = 0; i < (int)g_worldObjects.size(); ++i)
     {
         const GameObject& obj = g_worldObjects[i];
         if (obj.collected)
@@ -417,7 +484,8 @@ void DrawMiniMap()
     for (int i = 0; i <= 16; ++i)
     {
         float ang = (float)i / 16.0f * 2.0f * 3.1415926f;
-        glVertex2f(dotX + std::cos(ang) * r, dotY + std::sin(ang) * r);
+        glVertex2f(dotX + (float)std::cos(ang) * r,
+            dotY + (float)std::sin(ang) * r);
     }
     glEnd();
 
@@ -430,7 +498,7 @@ void DrawMiniMap()
     glMatrixMode(GL_MODELVIEW);
 }
 
-// ================== 카메라 이동 / 점프 / 회전 ==================
+// ================== 점프 / 카메라 이동 ==================
 
 void UpdateJump(float dt)
 {
@@ -448,8 +516,8 @@ void UpdateJump(float dt)
 void UpdateCamera(float dt)
 {
     // 이동(WASD)
-    float forwardX = std::cos(camYaw);
-    float forwardZ = std::sin(camYaw);
+    float forwardX = (float)std::cos(camYaw);
+    float forwardZ = (float)std::sin(camYaw);
 
     float rightX = -forwardZ;
     float rightZ = forwardX;
@@ -478,7 +546,7 @@ void UpdateCamera(float dt)
         moveZ += rightZ;
     }
 
-    float len = std::sqrt(moveX * moveX + moveZ * moveZ);
+    float len = (float)std::sqrt(moveX * moveX + moveZ * moveZ);
     if (len > 0.0001f)
     {
         moveX /= len;
@@ -506,9 +574,22 @@ void UpdateCamera(float dt)
     if (arrowDown[ARROW_DOWN])
         camPitch -= TURN_SPEED_KEY * dt;
 
-    const float limit = 1.2f; // 상하 회전 제한(약 ±70도)
+    const float limit = 1.2f;
     if (camPitch > limit) camPitch = limit;
     if (camPitch < -limit) camPitch = -limit;
+
+    // 배 위에 있는지 여부
+    if (g_boatPlaced)
+    {
+        float dx = camX - g_boatPosX;
+        float dz = camZ - g_boatPosZ;
+        float dist2 = dx * dx + dz * dz;
+
+        if (dist2 < g_boatRadius * g_boatRadius)
+            g_onBoat = true;
+        else
+            g_onBoat = false;
+    }
 }
 
 // ================== 감정 오브젝트 습득 ==================
@@ -548,6 +629,21 @@ void TryCollectObject()
         g_worldObjects[bestIndex].collected = true;
         std::cout << "감정을 습득했습니다! index = "
             << bestIndex << std::endl;
+
+        g_collectedCount++;
+
+        // 첫 번째 감정을 습득했을 때 배 근처로 이동
+        if (g_collectedCount == 1 && g_boatPlaced)
+        {
+            camX = g_boatPosX;
+            camZ = g_boatPosZ - 1.0f;  // 배 뒤쪽 약간
+            camY = BASE_CAM_Y;
+            camVelY = 0.0f;
+            isOnGround = true;
+
+            g_onBoat = true;
+            std::cout << "첫 번째 감정을 얻어서 배 근처로 이동했습니다.\n";
+        }
     }
     else
     {
@@ -577,7 +673,7 @@ void KeyboardDown(unsigned char key, int, int)
     }
     else
     {
-        keyDown[key] = true; // WASD 등
+        keyDown[key] = true;
     }
 }
 
@@ -586,7 +682,6 @@ void KeyboardUp(unsigned char key, int, int)
     keyDown[key] = false;
 }
 
-// 방향키(특수키)
 void SpecialDown(int key, int, int)
 {
     if (key == GLUT_KEY_LEFT)  arrowDown[ARROW_LEFT] = true;
@@ -759,9 +854,19 @@ void InitEmotionObjects()
         << "개 경로 위에 배치 완료.\n";
 }
 
-// ================== 디스플레이 / 타이머 ==================
+// ================== 배(마야 모델) 렌더링 ==================
 
-int lastTime = 0;
+void DrawBoat()
+{
+    if (g_boatVertices.empty() || !g_boatPlaced)
+        return;
+
+    DrawOBJModel(g_boatVertices,
+        g_boatPosX, g_boatPosY, g_boatPosZ,
+        0.5f); // 배 스케일
+}
+
+// ================== 디스플레이 / 타이머 ==================
 
 void DisplayCallback()
 {
@@ -776,9 +881,9 @@ void DisplayCallback()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    float dirX = std::cos(camYaw) * std::cos(camPitch);
-    float dirY = std::sin(camPitch);
-    float dirZ = std::sin(camYaw) * std::cos(camPitch);
+    float dirX = (float)std::cos(camYaw) * (float)std::cos(camPitch);
+    float dirY = (float)std::sin(camPitch);
+    float dirZ = (float)std::sin(camYaw) * (float)std::cos(camPitch);
 
     gluLookAt(
         camX, camY, camZ,
@@ -789,9 +894,10 @@ void DisplayCallback()
     glEnable(GL_TEXTURE_2D);
     DrawMaze3D();
 
-    DrawSORObjects(cellSize);   // 감정 오브젝트
+    DrawSORObjects(cellSize);   // 감정 SOR 오브젝트
+    DrawBoat();                 // 배 모델
 
-    DrawMiniMap();              // 미니맵
+    DrawMiniMap();
 
     glutSwapBuffers();
 }
@@ -816,14 +922,14 @@ void IdleCallback()
 int main(int argc, char** argv)
 {
     GenerateMaze();
-
     std::srand((unsigned int)std::time(0));
     InitEmotionObjects();
+    InitBoatPosition();
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(winWidth, winHeight);
-    glutCreateWindow("Emotion Maze with SOR Emotions");
+    glutCreateWindow("Emotion Maze with SOR + Maya Boat");
 
     glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -831,6 +937,10 @@ int main(int argc, char** argv)
 
     if (!LoadWallTexture())
         std::cerr << "벽 텍스처 로드 실패. 텍스처 없이 실행합니다.\n";
+
+    // 마야에서 Export한 OBJ(배) 모델 로드
+    if (!LoadOBJ_Simple("Models/Boad.obj", g_boatVertices))
+        std::cout << "마야 배 모델 로드 실패.\n";
 
     glutDisplayFunc(DisplayCallback);
     glutReshapeFunc(ReshapeCallback);
