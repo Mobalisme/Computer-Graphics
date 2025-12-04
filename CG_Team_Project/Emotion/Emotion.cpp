@@ -33,6 +33,11 @@ bool visitedCell[CELL_H][CELL_W];
 
 std::mt19937 rng;
 
+struct Dir { int dx, dy; };
+const Dir dirs4[4] = {
+    { 0, -1 }, { 0,  1 }, { -1, 0 }, { 1,  0 }
+};
+
 // ================== 카메라 / 윈도우 설정 ==================
 
 int winWidth = 800;
@@ -49,34 +54,27 @@ float camZ = 1.5f;
 float camYaw = 0.0f;   // 좌우 회전 (라디안)
 float camPitch = 0.0f;   // 상하 회전 (라디안)
 
-const float MOVE_SPEED = 2.0f;
-const float TURN_SPEED_MOUSE = 0.0025f;
+const float MOVE_SPEED = 2.0f;  // m/s
+const float TURN_SPEED_KEY = 1.5f;  // 방향키로 회전 속도 (rad/s)
 
 // 점프 관련
 float camVelY = 0.0f;
 bool  isOnGround = true;
-const float BASE_CAM_Y = 0.8f;   // 평소 카메라 높이
-const float GRAVITY = -9.8f; // 아래 방향
-const float JUMP_SPEED = 4.5f;  // 점프 초기 속도
+const float BASE_CAM_Y = 0.8f;
+const float GRAVITY = -9.8f;
+const float JUMP_SPEED = 4.5f;
 
-bool keyDown[256] = { false };
+bool keyDown[256] = { false }; // WASD, etc.
 
-// 마우스 warpPointer용
-bool warpInProgress = false;
+// 방향키 상태
+enum { ARROW_LEFT = 0, ARROW_RIGHT, ARROW_UP, ARROW_DOWN };
+bool arrowDown[4] = { false, false, false, false };
 
 // ================== 텍스처 ==================
 
 GLuint g_wallTex = 0;
 
-// ================== 방향 구조체 ==================
-
-struct Dir { int dx, dy; };
-
-const Dir dirs4[4] = {
-    { 0, -1 }, { 0,  1 }, { -1, 0 }, { 1,  0 }
-};
-
-// ================== 랜덤 / 초기화 ==================
+// ================== 랜덤 / 미로 생성 ==================
 
 void InitRandom()
 {
@@ -101,8 +99,6 @@ void OpenCell(int cx, int cy)
     int y = 2 * cy + 1;
     maze[y][x] = PATH;
 }
-
-// ================== DFS 미로 생성 ==================
 
 void ShuffleDirs(std::vector<int>& order)
 {
@@ -146,8 +142,6 @@ void GenerateMazeDFS(int cx, int cy)
         }
     }
 }
-
-// ================== 입구 / 출구 ==================
 
 void AddEntranceExit()
 {
@@ -357,7 +351,7 @@ void DrawMiniMap()
     glVertex2f(ox - 2, oy + mapSize + 2);
     glEnd();
 
-    // 벽(흰색)
+    // 벽
     glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
     for (int z = 0; z < MAZE_H; ++z)
@@ -380,7 +374,7 @@ void DrawMiniMap()
     }
     glEnd();
 
-    // SOR 오브젝트들 (노란 사각형)
+    // SOR 오브젝트 (노란 사각형)
     glColor3f(1.0f, 1.0f, 0.0f);
     glBegin(GL_QUADS);
     for (std::size_t i = 0; i < g_worldObjects.size(); ++i)
@@ -395,8 +389,7 @@ void DrawMiniMap()
         float cx = ox + gx * cellW;
         float cy = oy + gz * cellH;
 
-        float half = cellW < cellH ? cellW : cellH;
-        half *= 0.25f;
+        float half = (cellW < cellH ? cellW : cellH) * 0.25f;
 
         float x0 = cx - half;
         float y0 = cy - half;
@@ -437,7 +430,7 @@ void DrawMiniMap()
     glMatrixMode(GL_MODELVIEW);
 }
 
-// ================== 카메라 이동 / 점프 ==================
+// ================== 카메라 이동 / 점프 / 회전 ==================
 
 void UpdateJump(float dt)
 {
@@ -454,6 +447,7 @@ void UpdateJump(float dt)
 
 void UpdateCamera(float dt)
 {
+    // 이동(WASD)
     float forwardX = std::cos(camYaw);
     float forwardZ = std::sin(camYaw);
 
@@ -501,6 +495,20 @@ void UpdateCamera(float dt)
         if (!IsBlocked(camX, newZ))
             camZ = newZ;
     }
+
+    // 회전(방향키)
+    if (arrowDown[ARROW_LEFT])
+        camYaw -= TURN_SPEED_KEY * dt;
+    if (arrowDown[ARROW_RIGHT])
+        camYaw += TURN_SPEED_KEY * dt;
+    if (arrowDown[ARROW_UP])
+        camPitch += TURN_SPEED_KEY * dt;
+    if (arrowDown[ARROW_DOWN])
+        camPitch -= TURN_SPEED_KEY * dt;
+
+    const float limit = 1.2f; // 상하 회전 제한(약 ±70도)
+    if (camPitch > limit) camPitch = limit;
+    if (camPitch < -limit) camPitch = -limit;
 }
 
 // ================== 감정 오브젝트 습득 ==================
@@ -510,7 +518,7 @@ void TryCollectObject()
     float px = camX;
     float pz = camZ;
 
-    float radius = 1.0f;              // 1m 안에 있으면 습득 가능
+    float radius = 1.0f;
     float radius2 = radius * radius;
 
     int bestIndex = -1;
@@ -551,11 +559,11 @@ void TryCollectObject()
 
 void KeyboardDown(unsigned char key, int, int)
 {
-    if (key == 27)   // ESC
+    if (key == 27) // ESC
     {
         std::exit(0);
     }
-    else if (key == ' ')   // 점프
+    else if (key == ' ')
     {
         if (isOnGround)
         {
@@ -563,13 +571,13 @@ void KeyboardDown(unsigned char key, int, int)
             isOnGround = false;
         }
     }
-    else if (key == 'r' || key == 'R')   // 감정 습득
+    else if (key == 'r' || key == 'R')
     {
         TryCollectObject();
     }
     else
     {
-        keyDown[key] = true; // WASD 등 이동 키
+        keyDown[key] = true; // WASD 등
     }
 }
 
@@ -578,29 +586,21 @@ void KeyboardUp(unsigned char key, int, int)
     keyDown[key] = false;
 }
 
-void MouseMotionCallback(int x, int y)
+// 방향키(특수키)
+void SpecialDown(int key, int, int)
 {
-    if (warpInProgress)
-    {
-        warpInProgress = false;
-        return;
-    }
+    if (key == GLUT_KEY_LEFT)  arrowDown[ARROW_LEFT] = true;
+    if (key == GLUT_KEY_RIGHT) arrowDown[ARROW_RIGHT] = true;
+    if (key == GLUT_KEY_UP)    arrowDown[ARROW_UP] = true;
+    if (key == GLUT_KEY_DOWN)  arrowDown[ARROW_DOWN] = true;
+}
 
-    int cx = winWidth / 2;
-    int cy = winHeight / 2;
-
-    int dx = x - cx;
-    int dy = y - cy;
-
-    camYaw += dx * TURN_SPEED_MOUSE;
-    camPitch -= dy * TURN_SPEED_MOUSE;
-
-    const float limit = 1.2f; // 약 ±70도
-    if (camPitch > limit) camPitch = limit;
-    if (camPitch < -limit) camPitch = -limit;
-
-    warpInProgress = true;
-    glutWarpPointer(cx, cy);
+void SpecialUp(int key, int, int)
+{
+    if (key == GLUT_KEY_LEFT)  arrowDown[ARROW_LEFT] = false;
+    if (key == GLUT_KEY_RIGHT) arrowDown[ARROW_RIGHT] = false;
+    if (key == GLUT_KEY_UP)    arrowDown[ARROW_UP] = false;
+    if (key == GLUT_KEY_DOWN)  arrowDown[ARROW_DOWN] = false;
 }
 
 void ReshapeCallback(int w, int h)
@@ -614,13 +614,9 @@ void ReshapeCallback(int w, int h)
     glViewport(0, 0, winWidth, winHeight);
 }
 
-// ================== BFS로 입구→출구 최단 경로 ==================
+// ================== BFS: 입구→출구 경로 ==================
 
-struct Cell
-{
-    int x;
-    int z;
-};
+struct Cell { int x; int z; };
 
 bool BuildPathEntranceToExit(std::vector<Cell>& outPath)
 {
@@ -691,9 +687,7 @@ bool BuildPathEntranceToExit(std::vector<Cell>& outPath)
 
     while (!(cx == startX && cz == startZ))
     {
-        Cell c;
-        c.x = cx;
-        c.z = cz;
+        Cell c; c.x = cx; c.z = cz;
         outPath.push_back(c);
 
         int px = prevX[cz][cx];
@@ -704,12 +698,11 @@ bool BuildPathEntranceToExit(std::vector<Cell>& outPath)
     }
 
     outPath.push_back(Cell{ startX, startZ });
-
     std::reverse(outPath.begin(), outPath.end());
     return true;
 }
 
-// ================== 감정(SOR 오브젝트) 경로 위에 배치 ==================
+// ================== 감정(SOR) 경로 위에 배치 ==================
 
 void InitEmotionObjects()
 {
@@ -738,7 +731,6 @@ void InitEmotionObjects()
     {
         float t = (float)(i + 1) / (float)(EMOTION_COUNT + 1);
         int idx = (int)(t * (path.size() - 1));
-
         if (idx < 0) idx = 0;
         if (idx >= (int)path.size()) idx = (int)path.size() - 1;
 
@@ -826,7 +818,7 @@ int main(int argc, char** argv)
     GenerateMaze();
 
     std::srand((unsigned int)std::time(0));
-    InitEmotionObjects();   // 감정 배치
+    InitEmotionObjects();
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
@@ -840,15 +832,15 @@ int main(int argc, char** argv)
     if (!LoadWallTexture())
         std::cerr << "벽 텍스처 로드 실패. 텍스처 없이 실행합니다.\n";
 
-    glutSetCursor(GLUT_CURSOR_NONE);
-    warpInProgress = true;
-    glutWarpPointer(winWidth / 2, winHeight / 2);
+    // 마우스는 더 이상 사용하지 않으므로 커서도 숨기지 않아도 됨
+    // glutSetCursor(GLUT_CURSOR_NONE);
 
     glutDisplayFunc(DisplayCallback);
     glutReshapeFunc(ReshapeCallback);
     glutKeyboardFunc(KeyboardDown);
     glutKeyboardUpFunc(KeyboardUp);
-    glutPassiveMotionFunc(MouseMotionCallback);
+    glutSpecialFunc(SpecialDown);
+    glutSpecialUpFunc(SpecialUp);
     glutIdleFunc(IdleCallback);
 
     lastTime = glutGet(GLUT_ELAPSED_TIME);
