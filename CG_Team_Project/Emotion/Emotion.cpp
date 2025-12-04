@@ -4,8 +4,9 @@
 #include <random>
 #include <vector>
 #include <algorithm>
-#include <queue>
 #include <cmath>
+#include <ctime>
+#include <cstdlib>
 
 #include <GL/freeglut.h>
 #include <GL/glu.h>
@@ -13,6 +14,8 @@
 // stb_image: 이 cpp 한 군데에서만 IMPLEMENTATION 정의
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+#include "SOR_Objects.h"
 
 // ================== 미로 설정 ==================
 
@@ -35,19 +38,20 @@ std::mt19937 rng;
 int winWidth = 800;
 int winHeight = 800;
 
-// 플레이어 위치 (1,1) 셀 중앙 기준
+// 셀 크기 및 벽 높이
 float cellSize = 1.0f;
 float wallHeight = 1.6f;
 
-float camX = 1.5f;   // x = (1 + 0.5) * cellSize
-float camY = 0.8f;   // 눈 높이
+// 플레이어 카메라 위치 (1,1셀 중앙에서 시작)
+float camX = 1.5f;
+float camY = 0.8f;
 float camZ = 1.5f;
 
 float camYaw = 0.0f;   // 좌우 회전 (라디안)
 float camPitch = 0.0f;   // 상하 회전 (라디안)
 
 const float MOVE_SPEED = 2.0f;     // m/s
-const float TURN_SPEED_MOUSE = 0.0025f;  // 마우스 감도
+const float TURN_SPEED_MOUSE = 0.0025f;  // 마우스 회전 속도
 
 bool keyDown[256] = { false };
 
@@ -58,30 +62,13 @@ bool warpInProgress = false;
 
 GLuint g_wallTex = 0;
 
-// ================== 감정 구슬 ==================
-
-struct Orb {
-    float x, y, z;
-    float radius;
-    int   emotionId; // 0:기쁨, 1:슬픔, 2:버럭, 3:까칠, 4:소심
-    bool  collected;
-};
-
-std::vector<Orb> g_orbs;
-
-// 입구 / 출구 셀 (PATH 셀의 좌표)
-const int START_X = 1;
-const int START_Z = 1;
-const int EXIT_X = MAZE_W - 2;
-const int EXIT_Z = MAZE_H - 2;
-
-// ---------- 랜덤 / 초기화 ----------
+// ================== 랜덤 / 초기화 ==================
 
 void InitRandom()
 {
     std::random_device rd;
     rng.seed(rd());   // 매번 다른 미로
-    // rng.seed(1234); // 같은 미로를 보고 싶으면 이렇게 고정
+    // rng.seed(1234); // 같은 미로 보고 싶으면 고정
 }
 
 int RandInt(int a, int b)
@@ -119,7 +106,7 @@ void OpenCell(int cx, int cy)
     maze[y][x] = PATH;
 }
 
-// ---------- DFS 미로 생성 ----------
+// ================== DFS 미로 생성 ==================
 
 struct Dir { int dx, dy; };
 
@@ -127,7 +114,7 @@ const Dir dirs4[4] = {
     { 0, -1 }, // 위
     { 0,  1 }, // 아래
     { -1, 0 }, // 왼
-    { 1,  0 }  // 오른
+    { 1,  0 }  // 오
 };
 
 void ShuffleDirs(std::vector<int>& order)
@@ -169,14 +156,13 @@ void GenerateMazeDFS(int cx, int cy)
     }
 }
 
-// ---------- 입구 / 출구 ----------
+// ================== 입구 / 출구 ==================
 
 void AddEntranceExit()
 {
-    // 입구: 왼쪽 벽 (시작 셀 (0,0)의 왼쪽)
+    // 입구: 왼쪽 벽
     maze[1][0] = PATH;                        // (x=0, y=1)
-
-    // 출구: 오른쪽 벽 (마지막 셀 오른쪽)
+    // 출구: 오른쪽 벽
     maze[MAZE_H - 2][MAZE_W - 1] = PATH;      // (x=MAZE_W-1, y=MAZE_H-2)
 }
 
@@ -194,12 +180,12 @@ void GenerateMaze()
 
 // ================== 텍스처 로드 ==================
 
-// 작업 폴더가 어디냐에 따라 Textures/wall.png, ../Textures/wall.png 둘 다 시도
+// 작업 디렉터리가 어디냐에 따라 몇 가지 후보 경로를 시도
 bool LoadWallTexture()
 {
     const char* candidates[] = {
-        "Textures/wall.png",     // 작업 폴더가 프로젝트 루트일 때
-        "../Textures/wall.png",  // 작업 폴더가 Debug/ 또는 Release/일 때
+        "Textures/wall.png",     // 작업 디렉터리가 프로젝트 루트일 때
+        "../Textures/wall.png",  // 작업 디렉터리가 Debug/ 또는 Release/일 때
         "wall.png"               // exe 옆에 둘 경우
     };
 
@@ -227,7 +213,8 @@ bool LoadWallTexture()
     }
 
     GLenum format;
-    if (channels == 3) format = GL_RGB;
+    if (channels == 1) format = GL_RED;
+    else if (channels == 3) format = GL_RGB;
     else if (channels == 4) format = GL_RGBA;
     else
     {
@@ -244,6 +231,7 @@ bool LoadWallTexture()
         w, h, 0, format, GL_UNSIGNED_BYTE, data
     );
 
+    // mipmap 없이 간단한 필터 사용
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -284,132 +272,7 @@ bool IsBlocked(float x, float z)
     return false;
 }
 
-// ================== 입구→출구 경로(BFS) & 구슬 배치 ==================
-
-struct Node { int x, z; };
-
-std::vector<Node> ComputePathEntranceToExit()
-{
-    const int INF = 1e9;
-    static int  dist[MAZE_H][MAZE_W];
-    static Node prevNode[MAZE_H][MAZE_W];
-
-    for (int z = 0; z < MAZE_H; ++z)
-    {
-        for (int x = 0; x < MAZE_W; ++x)
-        {
-            dist[z][x] = INF;
-            prevNode[z][x] = { -1, -1 };
-        }
-    }
-
-    std::queue<Node> q;
-    q.push({ START_X, START_Z });
-    dist[START_Z][START_X] = 0;
-
-    const int dx[4] = { 1, -1, 0, 0 };
-    const int dz[4] = { 0, 0, 1, -1 };
-
-    while (!q.empty())
-    {
-        Node cur = q.front(); q.pop();
-        if (cur.x == EXIT_X && cur.z == EXIT_Z) break;
-
-        for (int dir = 0; dir < 4; ++dir)
-        {
-            int nx = cur.x + dx[dir];
-            int nz = cur.z + dz[dir];
-
-            if (nx < 0 || nx >= MAZE_W || nz < 0 || nz >= MAZE_H) continue;
-            if (maze[nz][nx] == WALL) continue; // 벽이면 못감
-
-            if (dist[nz][nx] == INF)
-            {
-                dist[nz][nx] = dist[cur.z][cur.x] + 1;
-                prevNode[nz][nx] = cur;
-                q.push({ nx, nz });
-            }
-        }
-    }
-
-    std::vector<Node> path;
-    Node cur = { EXIT_X, EXIT_Z };
-    if (dist[cur.z][cur.x] == INF)
-    {
-        return path;
-    }
-
-    while (!(cur.x == START_X && cur.z == START_Z))
-    {
-        path.push_back(cur);
-        cur = prevNode[cur.z][cur.x];
-    }
-    path.push_back({ START_X, START_Z });
-
-    std::reverse(path.begin(), path.end()); // 입구 -> 출구 순서
-    return path;
-}
-
-void PlaceEmotionOrbs()
-{
-    g_orbs.clear();
-
-    std::vector<Node> path = ComputePathEntranceToExit();
-    if (path.size() < 7) return; // 너무 짧으면 안 놓음
-
-    const int numOrbs = 5; // Joy, Sadness, Anger, Disgust, Fear
-
-    for (int i = 0; i < numOrbs; ++i)
-    {
-        float t = (i + 1.0f) / (numOrbs + 1.0f);  // 경로 6등분, 가운데 5지점
-        int idx = int(t * float(path.size() - 1));
-
-        int gx = path[idx].x;
-        int gz = path[idx].z;
-
-        float worldX = (gx + 0.5f) * cellSize;
-        float worldZ = (gz + 0.5f) * cellSize;
-        float worldY = 0.8f;       // 눈높이 정도
-
-        Orb orb;
-        orb.x = worldX;
-        orb.y = worldY;
-        orb.z = worldZ;
-        orb.radius = 0.3f;
-        orb.emotionId = i;   // 0~4 : Joy, Sadness, Anger, Disgust, Fear
-        orb.collected = false;
-
-        g_orbs.push_back(orb);
-    }
-}
-
-// ================== 색 / 렌더링 ==================
-
-void GetEmotionColor(int emotionId, float& r, float& g, float& b)
-{
-    switch (emotionId)
-    {
-    case 0: // Joy
-        r = 1.0f; g = 0.95f; b = 0.2f;  break;  // 노란빛
-    case 1: // Sadness
-        r = 0.3f; g = 0.5f;  b = 1.0f;  break;  // 파란빛
-    case 2: // Anger
-        r = 1.0f; g = 0.2f;  b = 0.1f;  break;  // 빨간빛
-    case 3: // Disgust
-        r = 0.2f; g = 0.9f;  b = 0.3f;  break;  // 초록빛
-    case 4: // Fear
-        r = 0.8f; g = 0.5f;  b = 1.0f;  break;  // 보라빛
-    default:
-        r = g = b = 1.0f;               break;
-    }
-}
-
-void SetEmotionColor(int emotionId)
-{
-    float r, g, b;
-    GetEmotionColor(emotionId, r, g, b);
-    glColor3f(r, g, b);
-}
+// ================== 렌더링 ==================
 
 void DrawWallBlock(float gx, float gz)
 {
@@ -429,30 +292,32 @@ void DrawWallBlock(float gx, float gz)
     glBegin(GL_QUADS);
 
     // 앞면 (z = z0)
-    glTexCoord2f(0.0f, 0.0f);      glVertex3f(x0, y0, z0);
-    glTexCoord2f(repeat, 0.0f);    glVertex3f(x1, y0, z0);
-    glTexCoord2f(repeat, repeat);  glVertex3f(x1, y1, z0);
-    glTexCoord2f(0.0f, repeat);    glVertex3f(x0, y1, z0);
+    glTexCoord2f(0.0f, 0.0f);   glVertex3f(x0, y0, z0);
+    glTexCoord2f(repeat, 0.0f);   glVertex3f(x1, y0, z0);
+    glTexCoord2f(repeat, repeat);    glVertex3f(x1, y1, z0);
+    glTexCoord2f(0.0f, repeat);     glVertex3f(x0, y1, z0);
 
     // 뒷면 (z = z1)
-    glTexCoord2f(0.0f, 0.0f);      glVertex3f(x1, y0, z1);
-    glTexCoord2f(repeat, 0.0f);    glVertex3f(x0, y0, z1);
-    glTexCoord2f(repeat, repeat);  glVertex3f(x0, y1, z1);
-    glTexCoord2f(0.0f, repeat);    glVertex3f(x1, y1, z1);
+    glTexCoord2f(0.0f, 0.0f);   glVertex3f(x1, y0, z1);
+    glTexCoord2f(repeat, 0.0f);   glVertex3f(x0, y0, z1);
+    glTexCoord2f(repeat, repeat);    glVertex3f(x0, y1, z1);
+    glTexCoord2f(0.0f, repeat);     glVertex3f(x1, y1, z1);
 
     // 왼쪽 면 (x = x0)
-    glTexCoord2f(0.0f, 0.0f);      glVertex3f(x0, y0, z1);
-    glTexCoord2f(repeat, 0.0f);    glVertex3f(x0, y0, z0);
-    glTexCoord2f(repeat, repeat);  glVertex3f(x0, y1, z0);
-    glTexCoord2f(0.0f, repeat);    glVertex3f(x0, y1, z1);
+    glTexCoord2f(0.0f, 0.0f);   glVertex3f(x0, y0, z1);
+    glTexCoord2f(repeat, 0.0f);   glVertex3f(x0, y0, z0);
+    glTexCoord2f(repeat, repeat);    glVertex3f(x0, y1, z0);
+    glTexCoord2f(0.0f, repeat);     glVertex3f(x0, y1, z1);
 
     // 오른쪽 면 (x = x1)
-    glTexCoord2f(0.0f, 0.0f);      glVertex3f(x1, y0, z0);
-    glTexCoord2f(repeat, 0.0f);    glVertex3f(x1, y0, z1);
-    glTexCoord2f(repeat, repeat);  glVertex3f(x1, y1, z1);
-    glTexCoord2f(0.0f, repeat);    glVertex3f(x1, y1, z0);
+    glTexCoord2f(0.0f, 0.0f);   glVertex3f(x1, y0, z0);
+    glTexCoord2f(repeat, 0.0f);   glVertex3f(x1, y0, z1);
+    glTexCoord2f(repeat, repeat);    glVertex3f(x1, y1, z1);
+    glTexCoord2f(0.0f, repeat);     glVertex3f(x1, y1, z0);
 
     glEnd();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void DrawFloor()
@@ -471,34 +336,10 @@ void DrawFloor()
     glEnd();
 }
 
-void DrawEmotionOrb(const Orb& orb)
-{
-    glPushMatrix();
-    glTranslatef(orb.x, orb.y, orb.z);
-
-    float r, g, b;
-    GetEmotionColor(orb.emotionId, r, g, b);
-
-    // 중심 구
-    glColor3f(r, g, b);
-    glutSolidSphere(orb.radius, 24, 24);
-
-    // 발광용 외곽 구 (additive blending)
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    float glowRadius = orb.radius * 1.6f;
-    glColor4f(r, g, b, 0.18f);
-    glutSolidSphere(glowRadius, 24, 24);
-    glDisable(GL_BLEND);
-
-    glPopMatrix();
-}
-
 void DrawMaze3D()
 {
     DrawFloor();
 
-    // 벽
     for (int z = 0; z < MAZE_H; ++z)
     {
         for (int x = 0; x < MAZE_W; ++x)
@@ -510,18 +351,10 @@ void DrawMaze3D()
         }
     }
 
-    // 감정 구슬 (텍스처 끄고 단색으로)
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDisable(GL_TEXTURE_2D);
-    for (const auto& orb : g_orbs)
-    {
-        if (!orb.collected)
-            DrawEmotionOrb(orb);
-    }
-    glEnable(GL_TEXTURE_2D);
+    // SOR 오브젝트(감정)는 DisplayCallback에서 따로 렌더링
 }
 
-// 오른쪽 위 미니맵(간단 2D)
+// 오른쪽 위 미니맵
 void DrawMiniMap()
 {
     glMatrixMode(GL_PROJECTION);
@@ -553,7 +386,7 @@ void DrawMiniMap()
     glVertex2f(ox - 2, oy + mapSize + 2);
     glEnd();
 
-    // 미로 (벽)
+    // 미로 벽
     glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
     for (int z = 0; z < MAZE_H; ++z)
@@ -576,31 +409,7 @@ void DrawMiniMap()
     }
     glEnd();
 
-    // 감정 구슬 위치 표시
-    for (const auto& orb : g_orbs)
-    {
-        if (orb.collected) continue;
-
-        float opx = orb.x / (MAZE_W * cellSize); // 0~1
-        float opz = orb.z / (MAZE_H * cellSize); // 0~1
-
-        float dotX = ox + opx * mapSize;
-        float dotY = oy + opz * mapSize;
-
-        SetEmotionColor(orb.emotionId);
-        float r = 3.0f;
-
-        glBegin(GL_TRIANGLE_FAN);
-        glVertex2f(dotX, dotY);
-        for (int i = 0; i <= 12; ++i)
-        {
-            float ang = (float)i / 12.0f * 2.0f * 3.1415926f;
-            glVertex2f(dotX + cosf(ang) * r, dotY + sinf(ang) * r);
-        }
-        glEnd();
-    }
-
-    // 플레이어 위치 표시 (빨간 점)
+    // 플레이어 위치
     float px = camX / (MAZE_W * cellSize);
     float pz = camZ / (MAZE_H * cellSize);
 
@@ -614,7 +423,7 @@ void DrawMiniMap()
     for (int i = 0; i <= 16; ++i)
     {
         float ang = (float)i / 16.0f * 2.0f * 3.1415926f;
-        glVertex2f(dotX + cosf(ang) * r, dotY + sinf(ang) * r);
+        glVertex2f(dotX + std::cos(ang) * r, dotY + std::sin(ang) * r);
     }
     glEnd();
 
@@ -627,35 +436,12 @@ void DrawMiniMap()
     glMatrixMode(GL_MODELVIEW);
 }
 
-// ================== 구슬 습득 처리 ==================
-
-void TryCollectOrb()
-{
-    const float COLLECT_DIST = 0.7f; // 카메라와 구슬 중심 사이 거리 기준
-
-    for (auto& orb : g_orbs)
-    {
-        if (orb.collected) continue;
-
-        float dx = camX - orb.x;
-        float dy = camY - orb.y;
-        float dz = camZ - orb.z;
-        float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist < COLLECT_DIST)
-        {
-            orb.collected = true;
-            std::cout << "Collected orb (emotion " << orb.emotionId << ")\n";
-            break; // 한 번에 하나만
-        }
-    }
-}
-
 // ================== 카메라 / 입력 ==================
 
 void UpdateCamera(float dt)
 {
-    float forwardX = cosf(camYaw);
-    float forwardZ = sinf(camYaw);
+    float forwardX = std::cos(camYaw);
+    float forwardZ = std::sin(camYaw);
 
     float rightX = -forwardZ;
     float rightZ = forwardX;
@@ -696,7 +482,6 @@ void UpdateCamera(float dt)
         float newX = camX + dx;
         float newZ = camZ + dz;
 
-        // 충돌 체크 (축 분리)
         if (!IsBlocked(newX, camZ))
             camX = newX;
         if (!IsBlocked(camX, newZ))
@@ -704,22 +489,15 @@ void UpdateCamera(float dt)
     }
 }
 
-void KeyboardDown(unsigned char key, int x, int y)
+void KeyboardDown(unsigned char key, int, int)
 {
     if (key == 27) // ESC
-    {
         std::exit(0);
-    }
-    else if (key == ' ') // 스페이스바로 구슬 습득 시도
-    {
-        TryCollectOrb();
-        return;
-    }
 
     keyDown[key] = true;
 }
 
-void KeyboardUp(unsigned char key, int x, int y)
+void KeyboardUp(unsigned char key, int, int)
 {
     keyDown[key] = false;
 }
@@ -741,8 +519,7 @@ void MouseMotionCallback(int x, int y)
     camYaw += dx * TURN_SPEED_MOUSE;
     camPitch -= dy * TURN_SPEED_MOUSE;
 
-    // 피치 제한
-    const float limit = 1.2f; // 약 +-70도
+    const float limit = 1.2f; // 약 ±70도
     if (camPitch > limit) camPitch = limit;
     if (camPitch < -limit) camPitch = -limit;
 
@@ -774,9 +551,9 @@ void DisplayCallback()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    float dirX = cosf(camYaw) * cosf(camPitch);
-    float dirY = sinf(camPitch);
-    float dirZ = sinf(camYaw) * cosf(camPitch);
+    float dirX = std::cos(camYaw) * std::cos(camPitch);
+    float dirY = std::sin(camPitch);
+    float dirZ = std::sin(camYaw) * std::cos(camPitch);
 
     gluLookAt(
         camX, camY, camZ,
@@ -787,6 +564,9 @@ void DisplayCallback()
     glEnable(GL_TEXTURE_2D);
     DrawMaze3D();
 
+    // SOR 오브젝트(= 감정들) 렌더링
+    DrawSORObjects(cellSize);
+
     // 2D 미니맵
     DrawMiniMap();
 
@@ -795,7 +575,7 @@ void DisplayCallback()
 
 void IdleCallback()
 {
-    int   now = glutGet(GLUT_ELAPSED_TIME);
+    int  now = glutGet(GLUT_ELAPSED_TIME);
     float dt = (now - lastTime) / 1000.0f;
     if (dt < 0.0f) dt = 0.0f;
     if (dt > 0.1f) dt = 0.1f;
@@ -811,8 +591,11 @@ void IdleCallback()
 
 int main(int argc, char** argv)
 {
-    GenerateMaze();       // 1) 미로 생성
-    PlaceEmotionOrbs();   // 2) 입구→출구 경로 위에 감정 구슬 배치
+    GenerateMaze();       // 미로 생성
+
+    // SOR 오브젝트용 랜덤 위상 초기화
+    std::srand((unsigned int)std::time(nullptr));
+    InitGameObjects();    // SOR 모델 로드 + 감정 오브젝트 배치
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
@@ -828,6 +611,7 @@ int main(int argc, char** argv)
         std::cerr << "벽 텍스처 로드 실패. 텍스처 없이 실행합니다.\n";
     }
 
+    // 마우스 커서 숨기기 + 중앙으로 고정
     glutSetCursor(GLUT_CURSOR_NONE);
     warpInProgress = true;
     glutWarpPointer(winWidth / 2, winHeight / 2);
