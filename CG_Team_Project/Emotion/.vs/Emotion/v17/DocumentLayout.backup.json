@@ -3,8 +3,16 @@
   "WorkspaceRootPath": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\AngerMap.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:AngerMap.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Emotion.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Emotion.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\AngerMap.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:AngerMap.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -13,6 +21,18 @@
     {
       "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:SOR_Objects.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\GameState.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:GameState.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\GameState.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:GameState.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,45 +42,110 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AngerMap.h",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\AngerMap.h",
+              "RelativeDocumentMoniker": "AngerMap.h",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\AngerMap.h*",
+              "RelativeToolTip": "AngerMap.h*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T10:57:30.229Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AngerMap.cpp",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\AngerMap.cpp",
+              "RelativeDocumentMoniker": "AngerMap.cpp",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\AngerMap.cpp",
+              "RelativeToolTip": "AngerMap.cpp",
+              "ViewState": "AgIAAIIAAAAAAAAAAAAgwJoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-07T10:57:47.572Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "Emotion.cpp",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Emotion.cpp",
+              "RelativeDocumentMoniker": "Emotion.cpp",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Emotion.cpp",
+              "RelativeToolTip": "Emotion.cpp",
+              "ViewState": "AgIAANsCAAAAAAAAAAAgwCgDAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-03T10:30:47.595Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "SOR_Objects.cpp",
               "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.cpp",
               "RelativeDocumentMoniker": "SOR_Objects.cpp",
               "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.cpp",
               "RelativeToolTip": "SOR_Objects.cpp",
-              "ViewState": "AgIAAJwAAAAAAAAAAAAcwKgAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAJ4AAAAAAAAAAAAgwLYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-12-04T02:57:16.199Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "SOR_Objects.h",
               "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.h",
               "RelativeDocumentMoniker": "SOR_Objects.h",
               "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.h",
               "RelativeToolTip": "SOR_Objects.h",
-              "ViewState": "AgIAACYAAAAAAAAAAAAcwEEAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAACkAAAAAAAAAAAAgwEEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-12-04T02:56:36.224Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Emotion.cpp",
-              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Emotion.cpp",
-              "RelativeDocumentMoniker": "Emotion.cpp",
-              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Emotion.cpp",
-              "RelativeToolTip": "Emotion.cpp",
-              "ViewState": "AgIAAOoBAAAAAAAAAAAAAAACAAAAAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "GameState.cpp",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\GameState.cpp",
+              "RelativeDocumentMoniker": "GameState.cpp",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\GameState.cpp",
+              "RelativeToolTip": "GameState.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-12-03T10:30:47.595Z",
+              "WhenOpened": "2025-12-07T11:29:43.156Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Config.h",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Config.h",
+              "RelativeDocumentMoniker": "Config.h",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Config.h",
+              "RelativeToolTip": "Config.h",
+              "ViewState": "AgIAABYAAAAAAAAAAAAgwC4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T11:01:20.779Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "GameState.h",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\GameState.h",
+              "RelativeDocumentMoniker": "GameState.h",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\GameState.h",
+              "RelativeToolTip": "GameState.h",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAgwB8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-07T10:58:38.133Z",
               "EditorCaption": ""
             }
           ]

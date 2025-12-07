@@ -1,51 +1,52 @@
-// SOR_Objects.h
 #pragma once
 
 #include <vector>
 
-// SOR 모델의 한 점 (위치 + 색상/알파)
+// SOR 모델의 한 점 (RGBA 포함)
 struct ModelPoint
 {
     float x, y, z;
     float r, g, b, a;
 };
 
-// SOR 모델 하나: 세로(링) × 가로(각도) 격자
+// SOR 모델
 struct SORModel
 {
-    std::vector<std::vector<ModelPoint> > geometry;
+    std::vector<std::vector<ModelPoint>> geometry; // [row][col]
 };
 
-// 미로 위에 배치되는 SOR 오브젝트(감정 하나)
+// 미로 안에 배치되는 SOR 오브젝트
 struct GameObject
 {
-    int   modelIndex;    // g_loadedModels 인덱스
-    int   mazeX;         // 미로 격자 X
-    int   mazeY;         // 미로 격자 Y
+    int   modelIndex = -1;
+    int   mazeX = 0;
+    int   mazeY = 0;
 
-    float scale;         // 크기
+    float scale = 1.0f;
 
-    float baseAngle;      // 시작 각도(도)
-    float rotationSpeed;  // 프레임당 증가 각도(도)
-    float currentAngle;   // 누적 각도(도)
+    float baseAngle = 0.0f;
+    float rotationSpeed = 0.0f;
+    float currentAngle = 0.0f;
 
-    float baseAltitude;   // 기본 높이
-    float floatSpeed;     // 위상 변화 속도
-    float floatRange;     // 진폭
-    float floatPhase;     // 현재 위상(라디안)
+    float baseAltitude = 0.0f;
+    float floatSpeed = 0.0f;
+    float floatRange = 0.0f;
+    float floatPhase = 0.0f;
 
-    bool  collected;      // 이미 습득했는지
+    bool  collected = false;
+
+    // 감정 식별용
+    int   emotionId = -1;
 };
 
-// 전역 컨테이너(정의는 SOR_Objects.cpp 안에 있음)
-extern std::vector<SORModel>   g_loadedModels;
+// 전역 컨테이너 (정의는 cpp)
+extern std::vector<SORModel>    g_loadedModels;
 extern std::vector<GameObject> g_worldObjects;
 
-// SOR_Test01.cpp 에서 만든 model_data.txt 같은 파일 로드
-//   성공: 모델 인덱스(0,1,2,...) / 실패: -1
-int LoadAndRegisterModel(const char* filename);
+// 모델 로드 후 인덱스 반환
+int  LoadAndRegisterModel(const char* filename);
 
-// 미로 격자 좌표 기준으로 오브젝트 하나 추가
+// 미로 격자 좌표에 오브젝트 추가
 void AddObjectGrid(
     int   modelIdx,
     int   gridX, int gridY,
@@ -54,8 +55,11 @@ void AddObjectGrid(
     float initAngle,
     float rotSpeed,
     float floatSpeed,
-    float floatRange);
+    float floatRange,
+    int   emotionId = -1);
 
-// 3D 씬에서 SOR 오브젝트 전부 렌더링
-// cellSize: Emotion.cpp에서 쓰는 셀 크기
+// SOR 오브젝트 렌더
 void DrawSORObjects(float cellSize);
+
+// 전역 오브젝트 초기화(선택)
+void ClearSORObjects();
