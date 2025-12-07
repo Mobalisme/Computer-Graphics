@@ -7,7 +7,7 @@
 
 #include <GL/freeglut.h>
 
-// 전역 컨테이너 실제 정의 :contentReference[oaicite:3]{index=3}
+//  犬   
 std::vector<SORModel>    g_loadedModels;
 std::vector<GameObject> g_worldObjects;
 
@@ -16,7 +16,7 @@ int LoadAndRegisterModel(const char* filename)
     std::ifstream fin(filename);
     if (!fin.is_open())
     {
-        std::cout << "[SOR] 파일을 열 수 없습니다: " << filename << "\n";
+        std::cout << "[SOR]    求: " << filename << "\n";
         return -1;
     }
 
@@ -24,7 +24,7 @@ int LoadAndRegisterModel(const char* filename)
     fin >> rows >> cols;
     if (!fin || rows <= 0 || cols <= 0)
     {
-        std::cout << "[SOR] 잘못된 rows/cols: " << filename << "\n";
+        std::cout << "[SOR] 蔘 rows/cols: " << filename << "\n";
         return -1;
     }
 
@@ -40,7 +40,7 @@ int LoadAndRegisterModel(const char* filename)
             fin >> p.x >> p.y >> p.z >> p.r >> p.g >> p.b >> p.a;
             if (!fin)
             {
-                std::cout << "[SOR] 데이터 읽기 실패: " << filename << "\n";
+                std::cout << "[SOR]  閨 : " << filename << "\n";
                 return -1;
             }
             model.geometry[i][j] = p;
@@ -50,7 +50,7 @@ int LoadAndRegisterModel(const char* filename)
     g_loadedModels.push_back(model);
     int idx = (int)g_loadedModels.size() - 1;
 
-    std::cout << "[SOR] 모델 로드 완료: " << filename
+    std::cout << "[SOR]  琯 狗: " << filename
         << " (rows=" << rows << ", cols=" << cols
         << ", index=" << idx << ")\n";
 
@@ -160,7 +160,7 @@ void DrawSORObjects(float cellSize)
 
         glScalef(obj.scale, obj.scale, obj.scale);
 
-        // 약한 글로우 느낌을 위한 2-pass
+        //  紡恝   2-pass
         DrawSingleModel(g_loadedModels[obj.modelIndex]);
 
         glEnable(GL_BLEND);

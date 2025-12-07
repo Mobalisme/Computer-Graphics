@@ -18,6 +18,21 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AngerMap.cpp" />
+    <ClCompile Include="Global.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Maze.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="SOR_Objects.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AngerMap.h" />
+    <ClInclude Include="Global.h" />
+    <ClInclude Include="SOR_Objects.h" />
+    <ClInclude Include="stb_image.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -128,20 +143,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="AngerMap.cpp" />
-    <ClCompile Include="Emotion.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GameState.cpp" />
-    <ClCompile Include="SOR_Objects.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="AngerMap.h" />
-    <ClInclude Include="Config.h" />
-    <ClInclude Include="GameState.h" />
-    <ClInclude Include="SOR_Objects.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

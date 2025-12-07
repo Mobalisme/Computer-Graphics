@@ -2,20 +2,20 @@
 
 #include <vector>
 
-// SOR 모델의 한 점 (RGBA 포함)
+// SOR    (RGBA )
 struct ModelPoint
 {
     float x, y, z;
     float r, g, b, a;
 };
 
-// SOR 모델
+// SOR 
 struct SORModel
 {
     std::vector<std::vector<ModelPoint>> geometry; // [row][col]
 };
 
-// 미로 안에 배치되는 SOR 오브젝트
+// 肩 효 치풔 SOR 트
 struct GameObject
 {
     int   modelIndex = -1;
@@ -35,18 +35,18 @@ struct GameObject
 
     bool  collected = false;
 
-    // 감정 식별용
+    //  캤
     int   emotionId = -1;
 };
 
-// 전역 컨테이너 (정의는 cpp)
+//  犬 (풔 cpp)
 extern std::vector<SORModel>    g_loadedModels;
 extern std::vector<GameObject> g_worldObjects;
 
-// 모델 로드 후 인덱스 반환
+//  琯  琯 환
 int  LoadAndRegisterModel(const char* filename);
 
-// 미로 격자 좌표에 오브젝트 추가
+// 肩  표 트 煞
 void AddObjectGrid(
     int   modelIdx,
     int   gridX, int gridY,
@@ -58,8 +58,8 @@ void AddObjectGrid(
     float floatRange,
     int   emotionId = -1);
 
-// SOR 오브젝트 렌더
+// SOR 트 
 void DrawSORObjects(float cellSize);
 
-// 전역 오브젝트 초기화(선택)
+//  트 珂화()
 void ClearSORObjects();

@@ -1,32 +1,21 @@
 #include "AngerMap.h"
-#include "GameState.h"
-
 #include <GL/freeglut.h>
 #include <cmath>
 
 namespace
 {
     float g_time = 0.0f;
-    bool  g_inited = false;
     bool  g_cleared = false;
-}
-
-void AngerMap::Init()
-{
-    if (g_inited) return;
-    g_inited = true;
 }
 
 void AngerMap::Enter()
 {
-    Init();
     g_time = 0.0f;
     g_cleared = false;
 }
 
 void AngerMap::Exit()
 {
-    // ÇöÀç´Â º°µµ ¸®¼Ò½º ÇØÁ¦ ¾øÀ½
 }
 
 void AngerMap::Update(float dt)
@@ -35,57 +24,46 @@ void AngerMap::Update(float dt)
 
     g_time += dt;
 
-    // µ¥¸ð¿ë: 5ÃÊ ¹öÆ¼¸é Å¬¸®¾î Ã³¸®
+    // ë°ëª¨í˜• ë¶„ë…¸ ê²½í—˜: 5ì´ˆ ë²„í‹°ë©´ í´ë¦¬ì–´
     if (g_time >= 5.0f)
-    {
         g_cleared = true;
-        gGameState.angerCleared = true;
-    }
 }
 
-static void DrawAngerRoom()
+static void DrawAngerRoom(float t)
 {
-    // ¾ÆÁÖ ´Ü¼øÇÑ "ºÐ³ë ¹æ": ºÓÀº ¹Ù´Ú + ¾îµÎ¿î º®
     const float size = 20.0f;
     const float h = 4.0f;
 
-    // ¹Ù´Ú(¿ë¾Ï ´À³¦)
     glDisable(GL_TEXTURE_2D);
+
+    // ë°”ë‹¥
     glColor3f(0.6f, 0.05f, 0.02f);
     glBegin(GL_QUADS);
     glVertex3f(-size, 0, -size);
-    glVertex3f(size, 0, -size);
-    glVertex3f(size, 0, size);
-    glVertex3f(-size, 0, size);
+    glVertex3f( size, 0, -size);
+    glVertex3f( size, 0,  size);
+    glVertex3f(-size, 0,  size);
     glEnd();
 
-    // º®
+    // ë²½
     glColor3f(0.08f, 0.02f, 0.02f);
     glBegin(GL_QUADS);
     // +Z
-    glVertex3f(-size, 0, size);
-    glVertex3f(size, 0, size);
-    glVertex3f(size, h, size);
-    glVertex3f(-size, h, size);
+    glVertex3f(-size, 0, size); glVertex3f(size, 0, size);
+    glVertex3f(size, h, size);  glVertex3f(-size, h, size);
     // -Z
-    glVertex3f(size, 0, -size);
-    glVertex3f(-size, 0, -size);
-    glVertex3f(-size, h, -size);
-    glVertex3f(size, h, -size);
+    glVertex3f(size, 0, -size);  glVertex3f(-size, 0, -size);
+    glVertex3f(-size, h, -size); glVertex3f(size, h, -size);
     // +X
-    glVertex3f(size, 0, size);
-    glVertex3f(size, 0, -size);
-    glVertex3f(size, h, -size);
-    glVertex3f(size, h, size);
+    glVertex3f(size, 0, size); glVertex3f(size, 0, -size);
+    glVertex3f(size, h, -size); glVertex3f(size, h, size);
     // -X
-    glVertex3f(-size, 0, -size);
-    glVertex3f(-size, 0, size);
-    glVertex3f(-size, h, size);
-    glVertex3f(-size, h, -size);
+    glVertex3f(-size, 0, -size); glVertex3f(-size, 0, size);
+    glVertex3f(-size, h, size);  glVertex3f(-size, h, -size);
     glEnd();
 
-    // °¡¿îµ¥ "ºÐ³ë ÄÚ¾î" (ÆÞ½º)
-    float pulse = 1.0f + 0.15f * std::sin(g_time * 6.0f);
+    // ë¶„ë…¸ ì½”ì–´
+    float pulse = 1.0f + 0.15f * std::sin(t * 6.0f);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -93,10 +71,8 @@ static void DrawAngerRoom()
     glPushMatrix();
     glTranslatef(0.0f, 1.2f, 0.0f);
     glScalef(pulse, pulse, pulse);
-
     glColor4f(1.0f, 0.2f, 0.05f, 0.6f);
     glutSolidSphere(0.6, 24, 24);
-
     glPopMatrix();
 
     glDisable(GL_BLEND);
@@ -104,13 +80,11 @@ static void DrawAngerRoom()
 
 void AngerMap::Render3D()
 {
-    // ºÐ³ë¸ÊÀº Ä«¸Þ¶ó¸¦ Emotion.cpp¿¡¼­ ±×´ë·Î ¾²´Â ÀüÁ¦
-    DrawAngerRoom();
+    DrawAngerRoom(g_time);
 }
 
 void AngerMap::Render2D(int winW, int winH)
 {
-    // °£´Ü HUD ÅØ½ºÆ®
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -127,8 +101,8 @@ void AngerMap::Render2D(int winW, int winH)
     glRasterPos2f(20, winH - 30);
 
     const char* msg = g_cleared
-        ? "[ANGER] Cleared! Press T to return."
-        : "[ANGER] Endure 5 seconds... (or press T to return after clear)";
+        ? "[ANGER] Cleared! Returning to maze..."
+        : "[ANGER] Endure 5 seconds...";
 
     for (const char* p = msg; *p; ++p)
         glutBitmapCharacter(GLUT_BITMAP_8_BY_13, *p);
@@ -140,12 +114,6 @@ void AngerMap::Render2D(int winW, int winH)
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
-}
-
-void AngerMap::OnKeyDown(unsigned char key)
-{
-    // ÇöÀç´Â º°µµ Å° Ã³¸® ¾øÀ½
-    (void)key;
 }
 
 bool AngerMap::IsCleared()

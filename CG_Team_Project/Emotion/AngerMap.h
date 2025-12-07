@@ -2,7 +2,6 @@
 
 namespace AngerMap
 {
-    void Init();
     void Enter();
     void Exit();
 
@@ -10,8 +9,6 @@ namespace AngerMap
 
     void Render3D();
     void Render2D(int winW, int winH);
-
-    void OnKeyDown(unsigned char key);
 
     bool IsCleared();
 }
