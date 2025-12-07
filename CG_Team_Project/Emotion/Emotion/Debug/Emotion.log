@@ -8,11 +8,8 @@ C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(1,1): warning C4819: 현�
 C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
   (소스 파일 'Main.cpp'을(를) 컴파일하는 중)
   
-C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(30,39): error C2065: 'g_lightPos': 선언되지 않은 식별자입니다.
 C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(219,1): error C2447: '{': 함수 헤더가 없습니다. 이전 스타일의 형식 목록입니까?
 C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(250,1): error C2447: '{': 함수 헤더가 없습니다. 이전 스타일의 형식 목록입니까?
-C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(521,38): error C2065: 'g_shadowMatrix': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(521,54): error C2065: 'g_lightPos': 선언되지 않은 식별자입니다.
 C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(528,21): error C2065: 'Display': 선언되지 않은 식별자입니다.
 C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(530,22): error C2065: 'KeyDownHelper': 선언되지 않은 식별자입니다.
   Maze.cpp
@@ -24,36 +21,10 @@ C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현�
 C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
   (소스 파일 'Player.cpp'을(를) 컴파일하는 중)
   
-C:\Computer-Graphics\CG_Team_Project\Emotion\Player.cpp(15,42): error C2065: 'TURN_SPEED_KEY': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Player.cpp(16,43): error C2065: 'TURN_SPEED_KEY': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Player.cpp(17,42): error C2065: 'TURN_SPEED_KEY': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Player.cpp(18,44): error C2065: 'TURN_SPEED_KEY': 선언되지 않은 식별자입니다.
   Renderer.cpp
 C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
 C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
   (소스 파일 'Renderer.cpp'을(를) 컴파일하는 중)
-  
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(75,5): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(86,13): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(293,26): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(293,64): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(296,10): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(296,62): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(296,33): error C2660: 'glBindTexture': 함수는 1개의 인수를 사용하지 않습니다.
-      C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\GL\gl.h(1162,25):
-      'glBindTexture' 선언을 참조하십시오.
-      C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(296,33):
-      인수 목록 '(int)'을(를) 일치시키는 동안
-  
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(378,26): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(378,64): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(380,10): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(380,62): error C2065: 'g_videoFrames': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(380,33): error C2660: 'glBindTexture': 함수는 1개의 인수를 사용하지 않습니다.
-      C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\GL\gl.h(1162,25):
-      'glBindTexture' 선언을 참조하십시오.
-      C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(380,33):
-      인수 목록 '(int)'을(를) 일치시키는 동안
   
 C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(412,86): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
 C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(414,157): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.

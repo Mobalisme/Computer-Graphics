@@ -18,6 +18,8 @@ const float MOVE_SPEED = 2.0f;
 const float GRAVITY = -9.8f;
 const float JUMP_SPEED = 4.5f;
 const float BASE_CAM_Y = 0.8f;
+const float TURN_SPEED_KEY = 1.8f; // 원하는 값으로 조정
+
 
 enum { ARROW_LEFT = 0, ARROW_RIGHT, ARROW_UP, ARROW_DOWN };
 
@@ -76,6 +78,13 @@ extern GLuint g_floorTex;
 
 extern std::vector<Flower> g_flowers;
 
+extern std::vector<GLuint> g_videoFrames;
+extern const int VIDEO_FPS;
+
+extern GLfloat g_lightPos[4];
+extern GLfloat g_shadowMatrix[16];
+
+
 // ===== 함수 =====
 void GenerateMaze();
 bool IsBlocked(float x, float z);
@@ -106,3 +115,5 @@ void InitEmotionObjects();
 void ReturnToMaze();
 
 void DrawEndingCredits();
+
+
