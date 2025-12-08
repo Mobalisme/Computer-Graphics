@@ -31,6 +31,9 @@ int g_textureStage = 0;
 GLuint g_wallTex = 0;
 GLuint g_floorTex = 0;
 
+// ★ 추가: 슬픔 맵 수면(Ocean) 텍스처
+GLuint g_sadWaterTex = 0;
+
 std::vector<Flower> g_flowers;
 
 // 영상 프레임(선택)

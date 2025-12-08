@@ -9,11 +9,8 @@
 #include <cmath>
 
 // -------------------- 모델 설정 --------------------
-// 네 요구 반영:
-// "당분간 model_data.txt 하나로 통일"
-// 필요하면 false로 바꾸면 sad/anger/happy 개별 파일 사용
-static const bool USE_SINGLE_MODEL = true;
-
+// 네 요구 반영: 당분간 model_data.txt 하나로 통일
+static const bool  USE_SINGLE_MODEL = true;
 static const char* MODEL_SINGLE = "model_data.txt";
 static const char* MODEL_SAD = "sad.txt";
 static const char* MODEL_ANGER = "anger.txt";
@@ -95,11 +92,11 @@ void InitEmotionObjects()
 
     if (idxSad < 0 && idxAnger < 0 && idxJoy < 0)
     {
-        std::cout << "[SOR] 모델 파일을 찾지 못했습니다. 작업 폴더 확인.\n";
+        std::cout << "[SOR] No model files found. Check working directory.\n";
         return;
     }
 
-    if (idxSad < 0)   idxSad = idxAnger >= 0 ? idxAnger : idxJoy;
+    if (idxSad < 0)   idxSad = (idxAnger >= 0 ? idxAnger : idxJoy);
     if (idxAnger < 0) idxAnger = idxSad;
     if (idxJoy < 0)   idxJoy = idxSad;
 
@@ -158,7 +155,6 @@ void InitEmotionObjects()
         std::reverse(path.begin(), path.end());
     }
 
-    // 경로가 너무 짧으면 안전 배치
     if (path.size() < 8)
     {
         AddObjectGrid(idxSad, 3, 3, 1.2f, 0.6f, 0.0f, 1.5f, 0.01f, 0.2f, EMO_SADNESS);
@@ -190,7 +186,7 @@ void TryCollectObject()
     if (g_gameState != STATE_PLAYING) return;
 
     float px = camX, pz = camZ;
-    float bestD2 = 1.0f; // 1.0 = 반경 1 내
+    float bestD2 = 1.0f;
     int best = -1;
 
     for (int i = 0; i < (int)g_worldObjects.size(); ++i)
@@ -217,14 +213,12 @@ void TryCollectObject()
     if (obj.emotionId >= 0 && obj.emotionId < EMO_MAIN_COUNT)
         g_mainCollected[obj.emotionId] = true;
 
-    // 벽 텍스처 단계 반영
     if (g_textureStage < 3)
     {
         g_textureStage++;
         ChangeWallTexture(g_textureStage);
     }
 
-    // 복귀용 카메라 저장
     savedCamX = camX; savedCamY = camY; savedCamZ = camZ;
     savedCamYaw = camYaw; savedCamPitch = camPitch;
 
@@ -233,22 +227,33 @@ void TryCollectObject()
     if (obj.emotionId == EMO_SADNESS)
     {
         g_gameState = STATE_SAD_SCENE;
-        camX = 0.0f; camY = 5.0f; camZ = -5.0f;
-        camYaw = 3.14159f; camPitch = -0.2f;
+
+        // 저시점(발목 느낌) + 영상 거리 확보
+        camX = 0.0f;
+        camY = 0.28f;
+        camZ = -2.2f;
+
+        camYaw = 3.14159f;
+        camPitch = -0.03f;
+
         InitStars();
     }
     else if (obj.emotionId == EMO_ANGER)
     {
         g_gameState = STATE_ANGER_SCENE;
+
         camX = 0.0f; camY = 2.0f; camZ = -8.0f;
         camYaw = 0.0f; camPitch = 0.0f;
+
         AngerMap::Enter();
     }
     else if (obj.emotionId == EMO_JOY)
     {
         g_gameState = STATE_JOY_SCENE;
+
         camX = 0.0f; camY = 5.0f; camZ = 15.0f;
         camYaw = -1.5708f; camPitch = -0.2f;
+
         InitFlowers();
     }
 }
@@ -367,8 +372,9 @@ static void Idle()
 
     if (g_gameState == STATE_SAD_SCENE)
     {
-        UpdateCamera(dt); // 시점 회전은 허용
+        UpdateCamera(dt);
         g_cutsceneTime += dt;
+
         if (g_cutsceneTime >= CUTSCENE_DURATION)
             ReturnToMaze();
     }
@@ -388,6 +394,7 @@ static void Idle()
     {
         UpdateCamera(dt);
         g_cutsceneTime += dt;
+
         if (g_cutsceneTime >= CUTSCENE_DURATION)
             ReturnToMaze();
     }
@@ -400,7 +407,6 @@ static void Idle()
         UpdateCamera(dt);
         UpdateJump(dt);
 
-        // 엔딩 트리거: 주된 감정 3개 수집 후 출구 근접
         bool allMain = g_mainCollected[EMO_SADNESS] &&
             g_mainCollected[EMO_ANGER] &&
             g_mainCollected[EMO_JOY];

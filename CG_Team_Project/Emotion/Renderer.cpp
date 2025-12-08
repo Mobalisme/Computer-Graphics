@@ -1,8 +1,11 @@
 ﻿#include "Global.h"
 #include "SOR_Objects.h"
+
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <vector>
+#include <cstdlib>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -30,7 +33,6 @@ static GLuint LoadTextureFromFile(const char* filename)
 
 void ChangeWallTexture(int stage)
 {
-    // stage 0~3: Textures/wall0~3.png 우선
     std::string path = "Textures/wall" + std::to_string(stage) + ".png";
     GLuint newTex = LoadTextureFromFile(path.c_str());
 
@@ -40,7 +42,6 @@ void ChangeWallTexture(int stage)
         newTex = LoadTextureFromFile(path.c_str());
     }
 
-    // stage 0 기본 대체
     if (newTex == 0 && stage == 0)
     {
         newTex = LoadTextureFromFile("Textures/Wall.png");
@@ -70,7 +71,28 @@ void LoadTextures()
     if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("floor.jpg");
     if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("floor.jpeg");
 
-    // (선택) 영상 프레임 로드: Video/1.jpg ...
+    // ★ 추가: 슬픔 맵 Ocean 텍스처 로드
+    // Windows에서 확장자 숨김일 수 있으니 png/jpg/jpeg 순서로 시도
+    g_sadWaterTex = LoadTextureFromFile("Textures/Ocean.png");
+    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/Ocean.jpg");
+    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/Ocean.jpeg");
+    // 혹시 소문자/루트 경로 대비
+    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/ocean.png");
+    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/ocean.jpg");
+    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/ocean.jpeg");
+
+    if (g_sadWaterTex != 0)
+    {
+        glBindTexture(GL_TEXTURE_2D, g_sadWaterTex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        std::cout << "[WARNING] Sad Ocean texture not found.\n";
+    }
+
+    // 영상 프레임 (Video/1.jpg ...)
     g_videoFrames.clear();
     for (int i = 1; i <= 120; ++i)
     {
@@ -134,10 +156,10 @@ static void DrawFloor()
 
     glBegin(GL_QUADS);
     glNormal3f(0, 1, 0);
-    glTexCoord2f(0, 0);         glVertex3f(0, 0, 0);
-    glTexCoord2f(MAZE_W, 0);    glVertex3f(w, 0, 0);
-    glTexCoord2f(MAZE_W, MAZE_H); glVertex3f(w, 0, h);
-    glTexCoord2f(0, MAZE_H);    glVertex3f(0, 0, h);
+    glTexCoord2f(0, 0);            glVertex3f(0, 0, 0);
+    glTexCoord2f(MAZE_W, 0);       glVertex3f(w, 0, 0);
+    glTexCoord2f(MAZE_W, MAZE_H);  glVertex3f(w, 0, h);
+    glTexCoord2f(0, MAZE_H);       glVertex3f(0, 0, h);
     glEnd();
 }
 
@@ -175,14 +197,12 @@ void DrawMiniMap()
     glColor4f(0, 0, 0, 0.6f);
     glRectf(ox - 2, oy - 2, ox + ms + 2, oy + ms + 2);
 
-    // 벽
     glColor3f(1, 1, 1);
     for (int z = 0; z < MAZE_H; ++z)
         for (int x = 0; x < MAZE_W; ++x)
             if (maze[z][x] == WALL)
                 glRectf(ox + x * cw, oy + z * ch, ox + (x + 1) * cw, oy + (z + 1) * ch);
 
-    // 감정 오브젝트 마커(감정별 색)
     for (const auto& obj : g_worldObjects)
     {
         if (obj.collected) continue;
@@ -194,11 +214,9 @@ void DrawMiniMap()
 
         float cx = ox + (obj.mazeX + 0.5f) * cw;
         float cy = oy + (obj.mazeY + 0.5f) * ch;
-
         glRectf(cx - 3, cy - 3, cx + 3, cy + 3);
     }
 
-    // 플레이어
     glColor3f(1, 0, 0);
     float px = ox + (camX / (MAZE_W * CELL_SIZE)) * ms;
     float py = oy + (camZ / (MAZE_H * CELL_SIZE)) * ms;
@@ -222,20 +240,20 @@ void DrawMiniMap()
     glMatrixMode(GL_MODELVIEW);
 }
 
-// ---------------- 슬픔(밤/바다) ----------------
+// ---------------- 슬픔(밤/별/수면/오로라) ----------------
 struct Star { float x, y, z; float b; };
 static std::vector<Star> g_stars;
 
 void InitStars()
 {
     g_stars.clear();
-    for (int i = 0; i < 200; ++i)
+    for (int i = 0; i < 220; ++i)
     {
         Star s;
-        s.x = -50.0f + (rand() % 100);
-        s.y = 10.0f + (rand() % 40);
-        s.z = -50.0f + (rand() % 100);
-        s.b = 0.4f + (rand() % 60) / 100.0f;
+        s.x = -60.0f + (rand() % 120);
+        s.y = 12.0f + (rand() % 45);
+        s.z = -60.0f + (rand() % 120);
+        s.b = 0.35f + (rand() % 65) / 100.0f;
         g_stars.push_back(s);
     }
 }
@@ -251,8 +269,9 @@ static void DrawVideoIfAny()
     glBindTexture(GL_TEXTURE_2D, tex);
 
     glPushMatrix();
-    glTranslatef(0, 6.0f, -8.0f);
-    glScalef(8.0f, 4.5f, 1.0f);
+    glTranslatef(0.0f, 7.5f, -18.0f);
+    glRotatef(5.0f, 1, 0, 0);
+    glScalef(10.0f, 5.6f, 1.0f);
 
     glColor3f(1, 1, 1);
     glBegin(GL_QUADS);
@@ -265,6 +284,182 @@ static void DrawVideoIfAny()
     glPopMatrix();
 }
 
+// ★ 잔잔한 물결 + 은은한 별/달빛 반짝임 + Ocean 텍스처 적용
+static void DrawSadShallowWater()
+{
+    const float startX = -25.0f;
+    const float startZ = -8.0f;
+    const float sizeX = 50.0f;
+    const float sizeZ = 60.0f;
+
+    const float waterBaseY = 0.02f;
+
+    // 너무 넓게 일렁이지 않도록 해상도/패턴 완만화
+    const int NX = 55;
+    const int NZ = 55;
+
+    float t = g_cutsceneTime;
+
+    const bool useTex = (g_sadWaterTex != 0);
+
+    if (useTex)
+    {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, g_sadWaterTex);
+    }
+    else
+    {
+        glDisable(GL_TEXTURE_2D);
+    }
+
+    glDisable(GL_LIGHTING);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // 텍스처 타일링 스케일(원하면 1.0~4.0 사이로 조절)
+    const float TILE_U = 2.0f;
+    const float TILE_V = 2.0f;
+
+    for (int iz = 0; iz < NZ; ++iz)
+    {
+        float z0 = startZ + sizeZ * (float)iz / (float)NZ;
+        float z1 = startZ + sizeZ * (float)(iz + 1) / (float)NZ;
+
+        float depth0 = (z0 - startZ) / sizeZ;
+        float depth1 = (z1 - startZ) / sizeZ;
+
+        float v0 = depth0 * TILE_V;
+        float v1 = depth1 * TILE_V;
+
+        // ---- 잔잔한 파동(속도/진폭 축소) ----
+        auto waveY = [&](float xx, float zz)
+            {
+                float w1 = sinf(xx * 0.22f + t * 0.35f) * 0.010f;
+                float w2 = sinf(zz * 0.20f + t * 0.30f) * 0.008f;
+                float w3 = sinf((xx + zz) * 0.14f + t * 0.45f) * 0.006f;
+                return w1 + w2 + w3;
+            };
+
+        // ---- 은은한 반짝임(과하지 않게) ----
+        auto shimmer = [&](float xx, float zz, float depth)
+            {
+                float s = 0.5f + 0.5f * sinf(xx * 0.55f - zz * 0.45f + t * 0.8f);
+                s = s * s;
+                return 0.05f * s * (1.0f - depth * 0.8f);
+            };
+
+        auto baseColor = [&](float depth, float add)
+            {
+                float nr = 0.06f, ng = 0.14f, nb = 0.22f;
+                float fr = 0.02f, fg = 0.06f, fb = 0.12f;
+
+                float r = nr * (1.0f - depth) + fr * depth;
+                float g = ng * (1.0f - depth) + fg * depth;
+                float b = nb * (1.0f - depth) + fb * depth;
+
+                r += add; g += add * 1.05f; b += add * 1.15f;
+
+                if (r > 1) r = 1; if (g > 1) g = 1; if (b > 1) b = 1;
+
+                // 텍스처와 곱해져도 너무 진해지지 않게 알파 유지
+                glColor4f(r, g, b, 0.93f);
+            };
+
+        glBegin(GL_TRIANGLE_STRIP);
+
+        for (int ix = 0; ix <= NX; ++ix)
+        {
+            float x = startX + sizeX * (float)ix / (float)NX;
+            float depthU = (x - startX) / sizeX;
+            float u = depthU * TILE_U;
+
+            {
+                float wy = waveY(x, z0);
+                float add = shimmer(x, z0, depth0);
+                baseColor(depth0, add);
+                if (useTex) glTexCoord2f(u, v0);
+                glVertex3f(x, waterBaseY + wy, z0);
+            }
+            {
+                float wy = waveY(x, z1);
+                float add = shimmer(x, z1, depth1);
+                baseColor(depth1, add);
+                if (useTex) glTexCoord2f(u, v1);
+                glVertex3f(x, waterBaseY + wy, z1);
+            }
+        }
+
+        glEnd();
+    }
+
+    glDisable(GL_BLEND);
+
+    // 먼 바다 확장(어두운 톤) - 텍스처 없이 단순 톤 유지
+    if (useTex) glDisable(GL_TEXTURE_2D);
+
+    glColor3f(0.01f, 0.03f, 0.08f);
+    glBegin(GL_QUADS);
+    glVertex3f(-80, waterBaseY, 40);
+    glVertex3f(80, waterBaseY, 40);
+    glVertex3f(80, waterBaseY, 120);
+    glVertex3f(-80, waterBaseY, 120);
+    glEnd();
+
+    if (g_gameState == STATE_PLAYING)
+        glEnable(GL_LIGHTING);
+}
+
+// ★ 오로라 리본
+static void DrawAurora()
+{
+    float t = g_cutsceneTime;
+
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE); // 은은한 발광
+
+    const int STEPS = 80;
+    const float X0 = -45.0f;
+    const float X1 = 45.0f;
+
+    glBegin(GL_QUAD_STRIP);
+
+    for (int i = 0; i <= STEPS; ++i)
+    {
+        float u = (float)i / (float)STEPS;
+        float x = X0 + (X1 - X0) * u;
+
+        float yTop = 24.0f + sinf(x * 0.08f + t * 0.15f) * 1.8f;
+        float yBot = yTop - (4.0f + sinf(x * 0.05f + t * 0.10f) * 0.8f);
+
+        float z = -35.0f + cosf(x * 0.06f + t * 0.08f) * 2.5f;
+
+        float phase = 0.5f + 0.5f * sinf(x * 0.10f + t * 0.12f);
+
+        // 녹청 ~ 보라 계열 혼합
+        float r = 0.06f + 0.10f * (1.0f - phase);
+        float g = 0.35f + 0.45f * phase;
+        float b = 0.18f + 0.25f * (1.0f - phase);
+
+        float aTop = 0.22f;
+        float aBot = 0.04f;
+
+        glColor4f(r, g, b, aTop);
+        glVertex3f(x, yTop, z);
+
+        glColor4f(r, g, b, aBot);
+        glVertex3f(x, yBot, z);
+    }
+
+    glEnd();
+
+    glDisable(GL_BLEND);
+}
+
+// ---------------- 슬픔 씬 메인 ----------------
 void DrawNightScene()
 {
     glClearColor(0.02f, 0.03f, 0.08f, 1);
@@ -293,22 +488,37 @@ void DrawNightScene()
     glBegin(GL_POINTS);
     for (auto& s : g_stars)
     {
-        glColor3f(s.b, s.b, s.b);
+        // 과한 깜빡임 방지: 아주 잔잔한 트윙클
+        float tw = 0.9f + 0.1f * sinf(g_cutsceneTime * 1.6f + s.x * 0.08f);
+        float b = s.b * tw;
+        glColor3f(b, b, b);
         glVertex3f(s.x, s.y, s.z);
     }
     glEnd();
 
-    // 바다(단순)
-    glColor3f(0.03f, 0.08f, 0.15f);
-    glBegin(GL_QUADS);
-    glVertex3f(-80, 0, -80);
-    glVertex3f(80, 0, -80);
-    glVertex3f(80, 0, 80);
-    glVertex3f(-80, 0, 80);
-    glEnd();
+    // 오로라(하늘에 먼저)
+    DrawAurora();
 
-    // (선택) 영상 패널
+    // 수평선 안개
+    glEnable(GL_FOG);
+    {
+        GLfloat fogColor[4] = { 0.02f, 0.05f, 0.10f, 1.0f };
+        glFogfv(GL_FOG_COLOR, fogColor);
+
+        glFogi(GL_FOG_MODE, GL_LINEAR);
+        glFogf(GL_FOG_START, 14.0f);
+        glFogf(GL_FOG_END, 75.0f);
+
+        glHint(GL_FOG_HINT, GL_NICEST);
+    }
+
+    // 잔잔한 수면
+    DrawSadShallowWater();
+
+    // 영상 패널
     DrawVideoIfAny();
+
+    glDisable(GL_FOG);
 
     glEnable(GL_LIGHTING);
 }
@@ -354,7 +564,6 @@ void DrawJoyScene()
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHTING);
 
-    // 풀 바닥
     glColor3f(0.25f, 0.75f, 0.25f);
     glBegin(GL_QUADS);
     glVertex3f(-40, 0, -40);
@@ -363,7 +572,6 @@ void DrawJoyScene()
     glVertex3f(-40, 0, 40);
     glEnd();
 
-    // 꽃 점묘
     for (auto& f : g_flowers)
     {
         glPushMatrix();
@@ -374,7 +582,6 @@ void DrawJoyScene()
         glPopMatrix();
     }
 
-    // (선택) 영상 패널
     DrawVideoIfAny();
 
     glEnable(GL_LIGHTING);
