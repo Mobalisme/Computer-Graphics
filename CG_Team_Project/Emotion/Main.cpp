@@ -228,13 +228,13 @@ void TryCollectObject()
     {
         g_gameState = STATE_SAD_SCENE;
 
-        // 저시점(발목 느낌) + 영상 거리 확보
+        // 카메라를 더 멀리 + 바다에서 조금 더 위로
         camX = 0.0f;
-        camY = 0.28f;
-        camZ = -2.2f;
+        camY = 0.45f;
+        camZ = -4.8f;
 
         camYaw = 3.14159f;
-        camPitch = -0.03f;
+        camPitch = -0.02f;
 
         InitStars();
     }

@@ -31,6 +31,9 @@ static GLuint LoadTextureFromFile(const char* filename)
     return tex;
 }
 
+// 슬픔 바다 텍스처(로컬 보관)
+static GLuint g_oceanTex = 0;
+
 void ChangeWallTexture(int stage)
 {
     std::string path = "Textures/wall" + std::to_string(stage) + ".png";
@@ -71,26 +74,14 @@ void LoadTextures()
     if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("floor.jpg");
     if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("floor.jpeg");
 
-    // ★ 추가: 슬픔 맵 Ocean 텍스처 로드
-    // Windows에서 확장자 숨김일 수 있으니 png/jpg/jpeg 순서로 시도
-    g_sadWaterTex = LoadTextureFromFile("Textures/Ocean.png");
-    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/Ocean.jpg");
-    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/Ocean.jpeg");
-    // 혹시 소문자/루트 경로 대비
-    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/ocean.png");
-    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/ocean.jpg");
-    if (g_sadWaterTex == 0) g_sadWaterTex = LoadTextureFromFile("Textures/ocean.jpeg");
-
-    if (g_sadWaterTex != 0)
-    {
-        glBindTexture(GL_TEXTURE_2D, g_sadWaterTex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    }
-    else
-    {
-        std::cout << "[WARNING] Sad Ocean texture not found.\n";
-    }
+    // ---- 슬픔 Ocean 텍스처 ----
+    if (g_oceanTex != 0) glDeleteTextures(1, &g_oceanTex);
+    g_oceanTex = LoadTextureFromFile("Textures/Ocean.png");
+    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Textures/Ocean.jpg");
+    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Textures/Ocean.jpeg");
+    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Ocean.png");
+    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Ocean.jpg");
+    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Ocean.jpeg");
 
     // 영상 프레임 (Video/1.jpg ...)
     g_videoFrames.clear();
@@ -258,6 +249,7 @@ void InitStars()
     }
 }
 
+// 영상 패널(상하 뒤집힘 수정: V축 반전)
 static void DrawVideoIfAny()
 {
     if (g_videoFrames.empty()) return;
@@ -275,16 +267,57 @@ static void DrawVideoIfAny()
 
     glColor3f(1, 1, 1);
     glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex3f(-1, -1, 0);
-    glTexCoord2f(1, 0); glVertex3f(1, -1, 0);
-    glTexCoord2f(1, 1); glVertex3f(1, 1, 0);
-    glTexCoord2f(0, 1); glVertex3f(-1, 1, 0);
+    // V 뒤집기
+    glTexCoord2f(0, 1); glVertex3f(-1, -1, 0);
+    glTexCoord2f(1, 1); glVertex3f(1, -1, 0);
+    glTexCoord2f(1, 0); glVertex3f(1, 1, 0);
+    glTexCoord2f(0, 0); glVertex3f(-1, 1, 0);
     glEnd();
 
     glPopMatrix();
 }
 
-// ★ 잔잔한 물결 + 은은한 별/달빛 반짝임 + Ocean 텍스처 적용
+// 달(간단 발광 디스크)
+static void DrawMoon()
+{
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    const float mx = -18.0f;
+    const float my = 32.0f;
+    const float mz = -40.0f;
+
+    // 글로우
+    glColor4f(0.9f, 0.95f, 1.0f, 0.18f);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(mx, my, mz);
+    for (int i = 0; i <= 36; ++i)
+    {
+        float a = i / 36.0f * 6.28318f;
+        float r = 6.0f;
+        glVertex3f(mx + cosf(a) * r, my + sinf(a) * r, mz);
+    }
+    glEnd();
+
+    // 본체
+    glColor4f(1.0f, 1.0f, 1.0f, 0.28f);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(mx, my, mz);
+    for (int i = 0; i <= 36; ++i)
+    {
+        float a = i / 36.0f * 6.28318f;
+        float r = 3.2f;
+        glVertex3f(mx + cosf(a) * r, my + sinf(a) * r, mz);
+    }
+    glEnd();
+
+    glDisable(GL_BLEND);
+}
+
+// ★ 출렁이는 Ocean 수면
 static void DrawSadShallowWater()
 {
     const float startX = -25.0f;
@@ -294,32 +327,93 @@ static void DrawSadShallowWater()
 
     const float waterBaseY = 0.02f;
 
-    // 너무 넓게 일렁이지 않도록 해상도/패턴 완만화
-    const int NX = 55;
-    const int NZ = 55;
+    // 실루엣 체감을 위해 해상도 증가
+    const int NX = 80;
+    const int NZ = 80;
 
     float t = g_cutsceneTime;
 
-    const bool useTex = (g_sadWaterTex != 0);
+    glDisable(GL_LIGHTING);
 
-    if (useTex)
+    if (g_oceanTex != 0)
     {
         glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, g_sadWaterTex);
+        glBindTexture(GL_TEXTURE_2D, g_oceanTex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
     else
     {
         glDisable(GL_TEXTURE_2D);
     }
 
-    glDisable(GL_LIGHTING);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // 텍스처 타일링 스케일(원하면 1.0~4.0 사이로 조절)
-    const float TILE_U = 2.0f;
-    const float TILE_V = 2.0f;
+    // ---- 파도(핵심: 진폭/진행파/디테일) ----
+    auto waveY = [&](float xx, float zz)
+        {
+            // 1) 큰 스웰(느린 꿀렁)
+            float swell =
+                sinf(xx * 0.10f + t * 0.90f) * 0.035f +
+                sinf(zz * 0.09f + t * 0.80f) * 0.030f;
+
+            // 2) 대각 진행파
+            float diag =
+                sinf((xx + zz) * 0.07f + t * 1.10f) * 0.028f;
+
+            // 3) 잔물결
+            float ripples =
+                sinf(xx * 0.35f - t * 1.60f) * 0.010f +
+                sinf(zz * 0.32f + t * 1.45f) * 0.010f;
+
+            return swell + diag + ripples;
+        };
+
+    // 달빛 반사 중심(간단 가우시안)
+    auto moonReflection = [&](float xx, float zz)
+        {
+            float cx = -6.0f;
+            float cz = 10.0f;
+
+            float dx = (xx - cx);
+            float dz = (zz - cz);
+
+            float d2 = dx * dx + dz * dz;
+            float g = expf(-d2 * 0.02f);
+
+            float pulse = 0.85f + 0.15f * sinf(t * 1.2f);
+            return 0.10f * g * pulse;
+        };
+
+    auto shimmer = [&](float xx, float zz, float depth)
+        {
+            float s = 0.5f + 0.5f * sinf(xx * 0.55f - zz * 0.45f + t * 0.8f);
+            s = s * s;
+
+            float base = 0.07f * s * (1.0f - depth * 0.70f);
+            float moon = moonReflection(xx, zz);
+            return base + moon;
+        };
+
+    auto baseColor = [&](float depth, float add)
+        {
+            // 밝은 에메랄드-딥블루
+            float nr = 0.10f, ng = 0.26f, nb = 0.36f;
+            float fr = 0.04f, fg = 0.12f, fb = 0.22f;
+
+            float r = nr * (1.0f - depth) + fr * depth;
+            float g = ng * (1.0f - depth) + fg * depth;
+            float b = nb * (1.0f - depth) + fb * depth;
+
+            r += add * 0.9f;
+            g += add * 1.1f;
+            b += add * 1.25f;
+
+            if (r > 1) r = 1; if (g > 1) g = 1; if (b > 1) b = 1;
+
+            glColor4f(r, g, b, 0.97f);
+        };
 
     for (int iz = 0; iz < NZ; ++iz)
     {
@@ -329,63 +423,41 @@ static void DrawSadShallowWater()
         float depth0 = (z0 - startZ) / sizeZ;
         float depth1 = (z1 - startZ) / sizeZ;
 
-        float v0 = depth0 * TILE_V;
-        float v1 = depth1 * TILE_V;
-
-        // ---- 잔잔한 파동(속도/진폭 축소) ----
-        auto waveY = [&](float xx, float zz)
-            {
-                float w1 = sinf(xx * 0.22f + t * 0.35f) * 0.010f;
-                float w2 = sinf(zz * 0.20f + t * 0.30f) * 0.008f;
-                float w3 = sinf((xx + zz) * 0.14f + t * 0.45f) * 0.006f;
-                return w1 + w2 + w3;
-            };
-
-        // ---- 은은한 반짝임(과하지 않게) ----
-        auto shimmer = [&](float xx, float zz, float depth)
-            {
-                float s = 0.5f + 0.5f * sinf(xx * 0.55f - zz * 0.45f + t * 0.8f);
-                s = s * s;
-                return 0.05f * s * (1.0f - depth * 0.8f);
-            };
-
-        auto baseColor = [&](float depth, float add)
-            {
-                float nr = 0.06f, ng = 0.14f, nb = 0.22f;
-                float fr = 0.02f, fg = 0.06f, fb = 0.12f;
-
-                float r = nr * (1.0f - depth) + fr * depth;
-                float g = ng * (1.0f - depth) + fg * depth;
-                float b = nb * (1.0f - depth) + fb * depth;
-
-                r += add; g += add * 1.05f; b += add * 1.15f;
-
-                if (r > 1) r = 1; if (g > 1) g = 1; if (b > 1) b = 1;
-
-                // 텍스처와 곱해져도 너무 진해지지 않게 알파 유지
-                glColor4f(r, g, b, 0.93f);
-            };
-
         glBegin(GL_TRIANGLE_STRIP);
 
         for (int ix = 0; ix <= NX; ++ix)
         {
             float x = startX + sizeX * (float)ix / (float)NX;
-            float depthU = (x - startX) / sizeX;
-            float u = depthU * TILE_U;
 
+            // ---- UV 흐름(체감 강화) ----
+            float uBase = (x - startX) * 0.10f;
+            float vBase0 = (z0 - startZ) * 0.10f;
+            float vBase1 = (z1 - startZ) * 0.10f;
+
+            float uFlow = sinf(t * 0.20f + z0 * 0.03f) * 0.03f;
+            float vFlow = cosf(t * 0.18f + x * 0.03f) * 0.03f;
+
+            // z0
             {
                 float wy = waveY(x, z0);
                 float add = shimmer(x, z0, depth0);
                 baseColor(depth0, add);
-                if (useTex) glTexCoord2f(u, v0);
+
+                if (g_oceanTex != 0)
+                    glTexCoord2f(uBase + uFlow, vBase0 + vFlow);
+
                 glVertex3f(x, waterBaseY + wy, z0);
             }
+
+            // z1
             {
                 float wy = waveY(x, z1);
                 float add = shimmer(x, z1, depth1);
                 baseColor(depth1, add);
-                if (useTex) glTexCoord2f(u, v1);
+
+                if (g_oceanTex != 0)
+                    glTexCoord2f(uBase + uFlow, vBase1 + vFlow);
+
                 glVertex3f(x, waterBaseY + wy, z1);
             }
         }
@@ -395,10 +467,9 @@ static void DrawSadShallowWater()
 
     glDisable(GL_BLEND);
 
-    // 먼 바다 확장(어두운 톤) - 텍스처 없이 단순 톤 유지
-    if (useTex) glDisable(GL_TEXTURE_2D);
-
-    glColor3f(0.01f, 0.03f, 0.08f);
+    // 먼 바다 확장
+    glDisable(GL_TEXTURE_2D);
+    glColor3f(0.02f, 0.06f, 0.14f);
     glBegin(GL_QUADS);
     glVertex3f(-80, waterBaseY, 40);
     glVertex3f(80, waterBaseY, 40);
@@ -410,7 +481,7 @@ static void DrawSadShallowWater()
         glEnable(GL_LIGHTING);
 }
 
-// ★ 오로라 리본
+// ★ 오로라 리본(함수는 남겨도 무방, 하지만 호출은 제거)
 static void DrawAurora()
 {
     float t = g_cutsceneTime;
@@ -419,7 +490,7 @@ static void DrawAurora()
     glDisable(GL_LIGHTING);
 
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE); // 은은한 발광
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     const int STEPS = 80;
     const float X0 = -45.0f;
@@ -439,7 +510,6 @@ static void DrawAurora()
 
         float phase = 0.5f + 0.5f * sinf(x * 0.10f + t * 0.12f);
 
-        // 녹청 ~ 보라 계열 혼합
         float r = 0.06f + 0.10f * (1.0f - phase);
         float g = 0.35f + 0.45f * phase;
         float b = 0.18f + 0.25f * (1.0f - phase);
@@ -462,7 +532,8 @@ static void DrawAurora()
 // ---------------- 슬픔 씬 메인 ----------------
 void DrawNightScene()
 {
-    glClearColor(0.02f, 0.03f, 0.08f, 1);
+    // 전체 톤 상향
+    glClearColor(0.04f, 0.06f, 0.14f, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_PROJECTION);
@@ -488,7 +559,6 @@ void DrawNightScene()
     glBegin(GL_POINTS);
     for (auto& s : g_stars)
     {
-        // 과한 깜빡임 방지: 아주 잔잔한 트윙클
         float tw = 0.9f + 0.1f * sinf(g_cutsceneTime * 1.6f + s.x * 0.08f);
         float b = s.b * tw;
         glColor3f(b, b, b);
@@ -496,23 +566,26 @@ void DrawNightScene()
     }
     glEnd();
 
-    // 오로라(하늘에 먼저)
-    DrawAurora();
+    // 오로라 제거: 호출하지 않음
+    // DrawAurora();
 
-    // 수평선 안개
+    // 달 추가
+    DrawMoon();
+
+    // 수평선 안개(밝기/거리 완화)
     glEnable(GL_FOG);
     {
-        GLfloat fogColor[4] = { 0.02f, 0.05f, 0.10f, 1.0f };
+        GLfloat fogColor[4] = { 0.05f, 0.09f, 0.18f, 1.0f };
         glFogfv(GL_FOG_COLOR, fogColor);
 
         glFogi(GL_FOG_MODE, GL_LINEAR);
-        glFogf(GL_FOG_START, 14.0f);
-        glFogf(GL_FOG_END, 75.0f);
+        glFogf(GL_FOG_START, 16.0f);
+        glFogf(GL_FOG_END, 90.0f);
 
         glHint(GL_FOG_HINT, GL_NICEST);
     }
 
-    // 잔잔한 수면
+    // 출렁이는 수면 + Ocean 텍스처 + 달빛 반짝임
     DrawSadShallowWater();
 
     // 영상 패널

@@ -78,7 +78,7 @@ extern int   g_textureStage;
 extern GLuint g_wallTex;
 extern GLuint g_floorTex;
 
-// ★ 추가: 슬픔 맵 수면(Ocean) 텍스처
+// ★ 슬픔 맵 수면(Ocean) 텍스처
 extern GLuint g_sadWaterTex;
 
 extern std::vector<Flower> g_flowers;
