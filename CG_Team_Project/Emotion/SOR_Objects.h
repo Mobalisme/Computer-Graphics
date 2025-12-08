@@ -1,21 +1,17 @@
 #pragma once
-
 #include <vector>
 
-// SOR    (RGBA )
 struct ModelPoint
 {
     float x, y, z;
     float r, g, b, a;
 };
 
-// SOR 
 struct SORModel
 {
-    std::vector<std::vector<ModelPoint>> geometry; // [row][col]
+    std::vector<std::vector<ModelPoint>> geometry;
 };
 
-// ̷ ȿ ġǴ SOR Ʈ
 struct GameObject
 {
     int   modelIndex = -1;
@@ -34,19 +30,14 @@ struct GameObject
     float floatPhase = 0.0f;
 
     bool  collected = false;
-
-    //  ĺ
     int   emotionId = -1;
 };
 
-//  ̳ (Ǵ cpp)
 extern std::vector<SORModel>    g_loadedModels;
 extern std::vector<GameObject> g_worldObjects;
 
-//  ε  ε ȯ
 int  LoadAndRegisterModel(const char* filename);
 
-// ̷  ǥ Ʈ ߰
 void AddObjectGrid(
     int   modelIdx,
     int   gridX, int gridY,
@@ -56,10 +47,7 @@ void AddObjectGrid(
     float rotSpeed,
     float floatSpeed,
     float floatRange,
-    int   emotionId = -1);
+    int   emotionId);
 
-// SOR Ʈ 
 void DrawSORObjects(float cellSize);
-
-//  Ʈ ʱȭ()
 void ClearSORObjects();

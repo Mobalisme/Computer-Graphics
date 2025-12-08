@@ -4,119 +4,107 @@
 
 namespace
 {
-    float g_time = 0.0f;
-    bool  g_cleared = false;
+    float tAccum = 0.0f;
+    bool  cleared = false;
+}
+
+void AngerMap::Init()
+{
+    tAccum = 0.0f;
+    cleared = false;
 }
 
 void AngerMap::Enter()
 {
-    g_time = 0.0f;
-    g_cleared = false;
+    tAccum = 0.0f;
+    cleared = false;
 }
 
 void AngerMap::Exit()
 {
+    // Æ¯º°ÇÑ ÀÚ¿ø ÇØÁ¦ ¾øÀ¸¸é ºñ¿öµÖµµ µÊ
+}
+
+void AngerMap::OnKeyDown(unsigned char k)
+{
+    // ºÐ³ë¸Ê¿¡¼­ T¸¦ ´©¸£¸é "Á¤È­" ´À³¦À¸·Î Áï½Ã Å¬¸®¾î
+    if (k == 't' || k == 'T')
+        cleared = true;
 }
 
 void AngerMap::Update(float dt)
 {
-    if (g_cleared) return;
+    tAccum += dt;
 
-    g_time += dt;
-
-    // ë°ëª¨í˜• ë¶„ë…¸ ê²½í—˜: 5ì´ˆ ë²„í‹°ë©´ í´ë¦¬ì–´
-    if (g_time >= 5.0f)
-        g_cleared = true;
+    // 8ÃÊ°¡ Áö³ª¸é ÀÚµ¿ Å¬¸®¾î(½Ã¿¬¿ë)
+    if (tAccum >= 8.0f)
+        cleared = true;
 }
 
-static void DrawAngerRoom(float t)
+bool AngerMap::IsCleared()
 {
-    const float size = 20.0f;
-    const float h = 4.0f;
-
-    glDisable(GL_TEXTURE_2D);
-
-    // ë°”ë‹¥
-    glColor3f(0.6f, 0.05f, 0.02f);
-    glBegin(GL_QUADS);
-    glVertex3f(-size, 0, -size);
-    glVertex3f( size, 0, -size);
-    glVertex3f( size, 0,  size);
-    glVertex3f(-size, 0,  size);
-    glEnd();
-
-    // ë²½
-    glColor3f(0.08f, 0.02f, 0.02f);
-    glBegin(GL_QUADS);
-    // +Z
-    glVertex3f(-size, 0, size); glVertex3f(size, 0, size);
-    glVertex3f(size, h, size);  glVertex3f(-size, h, size);
-    // -Z
-    glVertex3f(size, 0, -size);  glVertex3f(-size, 0, -size);
-    glVertex3f(-size, h, -size); glVertex3f(size, h, -size);
-    // +X
-    glVertex3f(size, 0, size); glVertex3f(size, 0, -size);
-    glVertex3f(size, h, -size); glVertex3f(size, h, size);
-    // -X
-    glVertex3f(-size, 0, -size); glVertex3f(-size, 0, size);
-    glVertex3f(-size, h, size);  glVertex3f(-size, h, -size);
-    glEnd();
-
-    // ë¶„ë…¸ ì½”ì–´
-    float pulse = 1.0f + 0.15f * std::sin(t * 6.0f);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-    glPushMatrix();
-    glTranslatef(0.0f, 1.2f, 0.0f);
-    glScalef(pulse, pulse, pulse);
-    glColor4f(1.0f, 0.2f, 0.05f, 0.6f);
-    glutSolidSphere(0.6, 24, 24);
-    glPopMatrix();
-
-    glDisable(GL_BLEND);
+    return cleared;
 }
 
 void AngerMap::Render3D()
 {
-    DrawAngerRoom(g_time);
+    glPushMatrix();
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+
+    // ºÓÀº ¹æ ´À³¦ÀÇ ¹Ù´Ú/º®(°£´Ü)
+    glColor3f(0.15f, 0.0f, 0.0f);
+    glBegin(GL_QUADS);
+    glVertex3f(-20, 0, -20);
+    glVertex3f(20, 0, -20);
+    glVertex3f(20, 0, 20);
+    glVertex3f(-20, 0, 20);
+    glEnd();
+
+    // ºÐ³ëÀÇ ¸Æµ¿ Å¥ºêµé
+    float pulse = 0.5f + 0.5f * sinf(tAccum * 6.0f);
+
+    for (int i = 0; i < 8; ++i)
+    {
+        glPushMatrix();
+        float x = -8.0f + i * 2.2f;
+        float z = -4.0f + (i % 3) * 3.0f;
+        glTranslatef(x, 1.0f + pulse * 0.8f, z);
+        glColor3f(0.7f + pulse * 0.3f, 0.05f, 0.05f);
+        glutSolidCube(1.2);
+        glPopMatrix();
+    }
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
+    glPopMatrix();
 }
 
-void AngerMap::Render2D(int winW, int winH)
+void AngerMap::Render2D(int w, int h)
 {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    gluOrtho2D(0, winW, 0, winH);
+    gluOrtho2D(0, w, 0, h);
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
 
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
     glDisable(GL_TEXTURE_2D);
 
-    glColor3f(1.0f, 0.3f, 0.2f);
-    glRasterPos2f(20, winH - 30);
-
-    const char* msg = g_cleared
-        ? "[ANGER] Cleared! Returning to maze..."
-        : "[ANGER] Endure 5 seconds...";
-
+    glColor3f(1, 0.3f, 0.3f);
+    const char* msg = "ANGER MAP - Press T to calm down";
+    glRasterPos2i(20, h - 40);
     for (const char* p = msg; *p; ++p)
-        glutBitmapCharacter(GLUT_BITMAP_8_BY_13, *p);
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *p);
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_2D);
 
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
-}
-
-bool AngerMap::IsCleared()
-{
-    return g_cleared;
 }

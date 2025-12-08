@@ -1,13 +1,10 @@
-#include "SOR_Objects.h"
-
+﻿#include "SOR_Objects.h"
 #include <fstream>
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
-
 #include <GL/freeglut.h>
 
-//  ̳   
 std::vector<SORModel>    g_loadedModels;
 std::vector<GameObject> g_worldObjects;
 
@@ -16,15 +13,16 @@ int LoadAndRegisterModel(const char* filename)
     std::ifstream fin(filename);
     if (!fin.is_open())
     {
-        std::cout << "[SOR]    ϴ: " << filename << "\n";
+        std::cout << "[SOR] 파일을 열 수 없습니다: " << filename << "\n";
         return -1;
     }
 
     int rows = 0, cols = 0;
     fin >> rows >> cols;
+
     if (!fin || rows <= 0 || cols <= 0)
     {
-        std::cout << "[SOR] ߸ rows/cols: " << filename << "\n";
+        std::cout << "[SOR] 잘못된 rows/cols: " << filename << "\n";
         return -1;
     }
 
@@ -40,7 +38,7 @@ int LoadAndRegisterModel(const char* filename)
             fin >> p.x >> p.y >> p.z >> p.r >> p.g >> p.b >> p.a;
             if (!fin)
             {
-                std::cout << "[SOR]  б : " << filename << "\n";
+                std::cout << "[SOR] 데이터 읽기 실패: " << filename << "\n";
                 return -1;
             }
             model.geometry[i][j] = p;
@@ -50,7 +48,7 @@ int LoadAndRegisterModel(const char* filename)
     g_loadedModels.push_back(model);
     int idx = (int)g_loadedModels.size() - 1;
 
-    std::cout << "[SOR]  ε Ϸ: " << filename
+    std::cout << "[SOR] 모델 로드 완료: " << filename
         << " (rows=" << rows << ", cols=" << cols
         << ", index=" << idx << ")\n";
 
@@ -75,6 +73,7 @@ void AddObjectGrid(
     obj.modelIndex = modelIdx;
     obj.mazeX = gridX;
     obj.mazeY = gridY;
+
     obj.scale = scale;
 
     obj.baseAngle = initAngle;
@@ -98,11 +97,7 @@ static void DrawSingleModel(const SORModel& model)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     int rows = (int)model.geometry.size();
-    if (rows < 2)
-    {
-        glDisable(GL_BLEND);
-        return;
-    }
+    if (rows < 2) { glDisable(GL_BLEND); return; }
 
     for (int i = 0; i < rows - 1; ++i)
     {
@@ -110,8 +105,7 @@ static void DrawSingleModel(const SORModel& model)
         const auto& ring1 = model.geometry[i + 1];
 
         int cols = (int)ring0.size();
-        if (cols == 0 || (int)ring1.size() != cols)
-            continue;
+        if (cols == 0 || (int)ring1.size() != cols) continue;
 
         glBegin(GL_TRIANGLE_STRIP);
         for (int j = 0; j < cols; ++j)
@@ -133,8 +127,7 @@ static void DrawSingleModel(const SORModel& model)
 
 void DrawSORObjects(float cellSize)
 {
-    if (g_worldObjects.empty())
-        return;
+    if (g_worldObjects.empty()) return;
 
     glDisable(GL_TEXTURE_2D);
 
@@ -160,9 +153,10 @@ void DrawSORObjects(float cellSize)
 
         glScalef(obj.scale, obj.scale, obj.scale);
 
-        //  ۷ο   2-pass
+        // 기본 패스
         DrawSingleModel(g_loadedModels[obj.modelIndex]);
 
+        // 약한 글로우
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         glScalef(1.08f, 1.08f, 1.08f);

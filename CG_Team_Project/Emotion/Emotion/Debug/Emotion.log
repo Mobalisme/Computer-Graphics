@@ -1,32 +1,11 @@
-﻿  Global.cpp
-C:\Computer-Graphics\CG_Team_Project\Emotion\Global.cpp(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-  (소스 파일 'Global.cpp'을(를) 컴파일하는 중)
-  
+﻿  AngerMap.cpp
+  Global.cpp
   Main.cpp
 C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-  (소스 파일 'Main.cpp'을(를) 컴파일하는 중)
-  
-C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(219,1): error C2447: '{': 함수 헤더가 없습니다. 이전 스타일의 형식 목록입니까?
-C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(250,1): error C2447: '{': 함수 헤더가 없습니다. 이전 스타일의 형식 목록입니까?
-C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(528,21): error C2065: 'Display': 선언되지 않은 식별자입니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Main.cpp(530,22): error C2065: 'KeyDownHelper': 선언되지 않은 식별자입니다.
   Maze.cpp
-C:\Computer-Graphics\CG_Team_Project\Emotion\Maze.cpp(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-  (소스 파일 'Maze.cpp'을(를) 컴파일하는 중)
-  
   Player.cpp
-C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-  (소스 파일 'Player.cpp'을(를) 컴파일하는 중)
-  
+C:\Computer-Graphics\CG_Team_Project\Emotion\Player.cpp(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
   Renderer.cpp
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Global.h(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-  (소스 파일 'Renderer.cpp'을(를) 컴파일하는 중)
-  
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(412,86): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(414,157): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
-C:\Computer-Graphics\CG_Team_Project\Emotion\Renderer.cpp(414,152): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
+  SOR_Objects.cpp
   코드를 생성하고 있습니다...
+  Emotion.vcxproj -> C:\Computer-Graphics\CG_Team_Project\Emotion\Debug\Emotion.exe

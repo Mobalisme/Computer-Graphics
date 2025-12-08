@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <GL/freeglut.h>
 #include <vector>
 #include <random>
@@ -8,18 +8,19 @@ const int MAZE_W = 25;
 const int MAZE_H = 25;
 const int CELL_W = (MAZE_W - 1) / 2;
 const int CELL_H = (MAZE_H - 1) / 2;
+
 const int WALL = 1;
 const int PATH = 0;
 
 const float CELL_SIZE = 1.0f;
 const float WALL_HEIGHT = 3.0f;
 
+// ===== 이동/점프 =====
 const float MOVE_SPEED = 2.0f;
 const float GRAVITY = -9.8f;
 const float JUMP_SPEED = 4.5f;
 const float BASE_CAM_Y = 0.8f;
-const float TURN_SPEED_KEY = 1.8f; // 원하는 값으로 조정
-
+const float TURN_SPEED_KEY = 1.8f;
 
 enum { ARROW_LEFT = 0, ARROW_RIGHT, ARROW_UP, ARROW_DOWN };
 
@@ -32,7 +33,7 @@ enum EmotionId
     EMO_MAIN_COUNT = 3
 };
 
-// ===== 게임 상태(최종 통일) =====
+// ===== 게임 상태 =====
 enum GameState
 {
     STATE_PLAYING = 0,
@@ -43,7 +44,8 @@ enum GameState
 };
 
 // ===== 기쁨 씬 소품 =====
-struct Flower {
+struct Flower
+{
     float x, y, z;
     float r, g, b;
     float scale;
@@ -53,13 +55,13 @@ struct Flower {
 extern int winWidth, winHeight;
 extern GameState g_gameState;
 
-extern int maze[MAZE_H][MAZE_W];
+extern int  maze[MAZE_H][MAZE_W];
 extern bool visitedCell[CELL_H][CELL_W];
 
 extern float camX, camY, camZ;
 extern float camYaw, camPitch;
 extern float camVelY;
-extern bool isOnGround;
+extern bool  isOnGround;
 
 extern bool keyDown[256];
 extern bool arrowDown[4];
@@ -70,20 +72,20 @@ extern const float CUTSCENE_DURATION;
 extern float savedCamX, savedCamY, savedCamZ;
 extern float savedCamYaw, savedCamPitch;
 
-extern bool g_mainCollected[EMO_MAIN_COUNT];
-extern int g_textureStage;
+extern bool  g_mainCollected[EMO_MAIN_COUNT];
+extern int   g_textureStage;
 
 extern GLuint g_wallTex;
 extern GLuint g_floorTex;
 
 extern std::vector<Flower> g_flowers;
 
+// (선택) 영상 프레임(이미지 시퀀스)
 extern std::vector<GLuint> g_videoFrames;
 extern const int VIDEO_FPS;
 
 extern GLfloat g_lightPos[4];
 extern GLfloat g_shadowMatrix[16];
-
 
 // ===== 함수 =====
 void GenerateMaze();
@@ -102,6 +104,8 @@ void DrawNightScene();
 void InitFlowers();
 void DrawJoyScene();
 
+void DrawEndingCredits();
+
 void UpdateCamera(float dt);
 void UpdateJump(float dt);
 
@@ -113,7 +117,3 @@ void SpecialUp(int k, int x, int y);
 void TryCollectObject();
 void InitEmotionObjects();
 void ReturnToMaze();
-
-void DrawEndingCredits();
-
-
