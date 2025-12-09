@@ -1,14 +1,1 @@
-﻿  Global.cpp
-  Main.cpp
-C:\CG_Team_Project\Emotion\Main.cpp(283,17): warning C4244: '초기화 중': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\CG_Team_Project\Emotion\Main.cpp(284,17): warning C4244: '초기화 중': 'int'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\CG_Team_Project\Emotion\Main.cpp(522,19): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-  Maze.cpp
-  Player.cpp
-  Renderer.cpp
-C:\CG_Team_Project\Emotion\Renderer.cpp(238,86): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
-C:\CG_Team_Project\Emotion\Renderer.cpp(240,157): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
-C:\CG_Team_Project\Emotion\Renderer.cpp(240,152): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
-  SOR_Objects.cpp
-  코드를 생성하고 있습니다...
-  Emotion.vcxproj -> C:\CG_Team_Project\Emotion\Debug\Emotion.exe
+﻿  Emotion.vcxproj -> C:\Computer-Graphics\CG_Team_Project\Emotion\Debug\Emotion.exe
