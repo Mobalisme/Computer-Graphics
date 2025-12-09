@@ -36,6 +36,10 @@ GLuint g_wallTex = 0;
 GLuint g_floorTex = 0;
 GLuint g_oceanTex1 = 0;
 GLuint g_oceanTex2 = 0;
+GLuint g_lavaTex1 = 0;
+GLuint g_lavaTex2 = 0;
+GLuint g_lavaProgram = 0;
+
 std::vector<GLuint> g_videoSad;
 std::vector<GLuint> g_videoJoy;
 const int VIDEO_FPS = 10;

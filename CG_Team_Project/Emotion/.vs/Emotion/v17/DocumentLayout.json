@@ -3,36 +3,44 @@
   "WorkspaceRootPath": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Maze.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Maze.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Global.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Global.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:SOR_Objects.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Player.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Player.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:SOR_Objects.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Player.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Player.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Global.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\lava.vert||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:lava.vert||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\lava.frag||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:lava.frag||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Maze.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:Maze.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{3090072C-0942-4F5E-B20F-E46C457C4243}|Emotion.vcxproj|solutionrelative:SOR_Objects.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -42,7 +50,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -58,45 +66,111 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Player.cpp",
-              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Player.cpp",
-              "RelativeDocumentMoniker": "Player.cpp",
-              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Player.cpp",
-              "RelativeToolTip": "Player.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-12-04T13:53:30.858Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "Main.cpp",
-              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Main.cpp",
-              "RelativeDocumentMoniker": "Main.cpp",
-              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Main.cpp",
-              "RelativeToolTip": "Main.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAdAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-12-04T13:53:06.354Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
               "Title": "Renderer.cpp",
               "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Renderer.cpp",
               "RelativeDocumentMoniker": "Renderer.cpp",
               "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Renderer.cpp",
               "RelativeToolTip": "Renderer.cpp",
-              "ViewState": "AgIAAOkBAAAAAAAAAAAAAAICAAAgAAAAAAAAAA==",
+              "ViewState": "AgIAAKwBAAAAAAAAAAAuwLsBAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-12-04T13:52:41.388Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Global.h",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.h",
+              "RelativeDocumentMoniker": "Global.h",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.h",
+              "RelativeToolTip": "Global.h",
+              "ViewState": "AgIAADYAAAAAAAAAAAAAAE0AAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-12-04T13:51:12.162Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Main.cpp",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Main.cpp",
+              "RelativeDocumentMoniker": "Main.cpp",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Main.cpp",
+              "RelativeToolTip": "Main.cpp",
+              "ViewState": "AgIAAF4CAAAAAAAAAAAuwH8CAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-04T13:53:06.354Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SOR_Objects.cpp",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.cpp",
+              "RelativeDocumentMoniker": "SOR_Objects.cpp",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.cpp",
+              "RelativeToolTip": "SOR_Objects.cpp",
+              "ViewState": "AgIAAEIAAAAAAAAAAAAAAFoAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-04T11:23:36.021Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "Player.cpp",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Player.cpp",
+              "RelativeDocumentMoniker": "Player.cpp",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Player.cpp",
+              "RelativeToolTip": "Player.cpp",
+              "ViewState": "AgIAABEAAAAAAAAAAAAcwCIAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-04T13:53:30.858Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Global.cpp",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.cpp",
+              "RelativeDocumentMoniker": "Global.cpp",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.cpp",
+              "RelativeToolTip": "Global.cpp",
+              "ViewState": "AgIAABwAAAAAAAAAAAAcwCkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-04T13:51:46.456Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "lava.vert",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\lava.vert",
+              "RelativeDocumentMoniker": "lava.vert",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\lava.vert",
+              "RelativeToolTip": "lava.vert",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-12-09T20:40:44.888Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "lava.frag",
+              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\lava.frag",
+              "RelativeDocumentMoniker": "lava.frag",
+              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\lava.frag",
+              "RelativeToolTip": "lava.frag",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAIwCQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-12-09T20:41:44.859Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
               "Title": "Maze.cpp",
               "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Maze.cpp",
               "RelativeDocumentMoniker": "Maze.cpp",
@@ -109,45 +183,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "Global.cpp",
-              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.cpp",
-              "RelativeDocumentMoniker": "Global.cpp",
-              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.cpp",
-              "RelativeToolTip": "Global.cpp",
-              "ViewState": "AgIAABIAAAAAAAAAAAAAACUAAAAXAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-12-04T13:51:46.456Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "Global.h",
-              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.h",
-              "RelativeDocumentMoniker": "Global.h",
-              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\Global.h",
-              "RelativeToolTip": "Global.h",
-              "ViewState": "AgIAACcAAAAAAAAAAAAAADYAAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-12-04T13:51:12.162Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "SOR_Objects.cpp",
-              "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.cpp",
-              "RelativeDocumentMoniker": "SOR_Objects.cpp",
-              "ToolTip": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.cpp",
-              "RelativeToolTip": "SOR_Objects.cpp",
-              "ViewState": "AgIAAEIAAAAAAAAAAAAAAFoAAAAyAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-12-04T11:23:36.021Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 9,
               "Title": "SOR_Objects.h",
               "DocumentMoniker": "C:\\Computer-Graphics\\CG_Team_Project\\Emotion\\SOR_Objects.h",
               "RelativeDocumentMoniker": "SOR_Objects.h",

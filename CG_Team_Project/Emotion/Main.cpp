@@ -10,8 +10,6 @@
 #include <utility>
 #include <ctime>
 
-
-
 struct EmotionData {
     int frustrationCount = 0;
     int confusionCount = 0;
@@ -29,10 +27,25 @@ void GenerateMaze();
 void DrawMaze3D();
 void DrawMiniMap();
 void DrawNightScene();
+void DrawJoyScene();
+void DrawAngerScene();          // ★ [NEW] 분노 컷신 씬
+void DrawEndingCredits();       // ★ 엔딩 크레딧
 void LoadTextures();
 void InitStars();
 void UpdateCamera(float dt);
 void UpdateJump(float dt);
+
+// 모델러 관련(이미 쓰고 있으니 선언 유지)
+void DrawModeler();
+void InitModeler();
+void HandleModelerKeyboard(unsigned char k, int x, int y);
+void HandleModelerMouse(int button, int state, int x, int y);
+void HandleModelerMotion(int x, int y);
+
+// 감정 오브젝트 초기화 (SOR_Modeler.cpp에서 Start Game 시 호출)
+void InitEmotionObjects();
+
+// --------------------------------------------
 
 void BuildShadowMatrix(GLfloat shadowMat[4][4], GLfloat light[4], GLfloat plane[4]) {
     GLfloat dot = plane[0] * light[0] + plane[1] * light[1] + plane[2] * light[2] + plane[3] * light[3];
@@ -41,6 +54,7 @@ void BuildShadowMatrix(GLfloat shadowMat[4][4], GLfloat light[4], GLfloat plane[
     shadowMat[0][2] = 0.f - light[2] * plane[0]; shadowMat[1][2] = 0.f - light[2] * plane[1]; shadowMat[2][2] = dot - light[2] * plane[2]; shadowMat[3][2] = 0.f - light[2] * plane[3];
     shadowMat[0][3] = 0.f - light[3] * plane[0]; shadowMat[1][3] = 0.f - light[3] * plane[1]; shadowMat[2][3] = 0.f - light[3] * plane[2]; shadowMat[3][3] = dot - light[3] * plane[3];
 }
+
 void SetupLighting() {
     glEnable(GL_LIGHTING); glEnable(GL_LIGHT0); glEnable(GL_NORMALIZE);
 
@@ -113,7 +127,7 @@ void CheckTrapCollision() {
                 continue;
             }
 
-            // [함정 Type 1~3] : 밟으면 타이머 발동
+            // [함정 Type 1~3]
             g_worldObjects[i].collected = true;
             if (t == 1) { // 좌절
                 g_slowTimer = 5.0f;
@@ -132,7 +146,6 @@ void CheckTrapCollision() {
     }
 }
 
-
 void ReturnToMaze() {
     std::cout << "\n>>> 컷신 종료. 복귀합니다. <<<\n";
     g_gameState = STATE_PLAYING;
@@ -140,6 +153,7 @@ void ReturnToMaze() {
     camX = savedCamX; camY = savedCamY; camZ = savedCamZ;
     camYaw = savedCamYaw; camPitch = savedCamPitch;
     camVelY = 0.0f; isOnGround = true;
+
     int gx = (int)(camX / CELL_SIZE), gz = (int)(camZ / CELL_SIZE);
     if (gx >= 0 && gx < MAZE_W && gz >= 0 && gz < MAZE_H) maze[gz][gx] = PATH;
     glutPostRedisplay();
@@ -163,7 +177,7 @@ void TryCollectObject() {
     if (best != -1) {
         g_worldObjects[best].collected = true;
 
-        // 감정 획득 체크
+        // 감정 획득 체크 (순서: Sad -> Anger -> Happiness)
         if (!g_emotionData.hasSadness) g_emotionData.hasSadness = true;
         else if (!g_emotionData.hasAnger) g_emotionData.hasAnger = true;
         else g_emotionData.hasHappiness = true;
@@ -172,29 +186,65 @@ void TryCollectObject() {
         g_textureStage++;
         ChangeWallTexture(g_textureStage);
 
-        // 컷신 진입
+        // 컷신 진입 전 카메라 저장
         savedCamX = camX; savedCamY = camY; savedCamZ = camZ;
         savedCamYaw = camYaw; savedCamPitch = camPitch;
 
+        // ----------------------------
+        // ★ 1) 슬픔 컷신
+        // ----------------------------
         if (g_textureStage == 1) {
             std::cout << ">> 슬픔 컷신\n";
             g_gameState = STATE_CUTSCENE;
             g_cutsceneTime = 0.0f;
-            camX = 0.0f; camY = 5.0f; camZ = -5.0f; camYaw = 3.14159f; camPitch = -0.2f;
+
+            camX = 0.0f;
+            camY = 5.0f;
+            camZ = -5.0f;
+            camYaw = 1.5708f;   // +Z 방향
+            camPitch = 0.25f;
+
             InitStars();
         }
-        else if (g_textureStage == 3) { // 3개 다 모았을 때 기쁨 컷신 (예시)
+        // ----------------------------
+        // ★ 2) 분노 컷신 (용암 셰이더)
+        // ----------------------------
+        else if (g_textureStage == 2) {
+            std::cout << ">> 분노 컷신\n";
+            g_gameState = STATE_ANGER_SCENE;   // ★ [NEW]
+            g_cutsceneTime = 0.0f;
+
+            // 카메라를 동일한 '영상/연출 방향' 기준으로 유지
+            camX = 0.0f;
+            camY = 5.0f;
+            camZ = -5.0f;
+            camYaw = 1.5708f;
+            camPitch = 0.20f;
+        }
+        // ----------------------------
+        // ★ 3) 기쁨 컷신
+        // ----------------------------
+        else if (g_textureStage == 3) {
             std::cout << ">> 기쁨 컷신\n";
             g_gameState = STATE_JOY_SCENE;
             g_cutsceneTime = 0.0f;
-            camX = 0.0f; camY = 5.0f; camZ = 15.0f; camYaw = -1.57f; camPitch = -0.2f;
-            // InitFlowers(); // 필요시 Renderer.cpp에 구현
+
+            camX = 0.0f; camY = 5.0f; camZ = 15.0f;
+            camYaw = -1.57f; camPitch = -0.2f;
         }
+        // ----------------------------
+        // ★ 예외 안전장치
+        // ----------------------------
         else {
-            // 그 외(분노 등)은 컷신 없이 바로 복귀하거나 공용 컷신 사용
             g_gameState = STATE_CUTSCENE;
             g_cutsceneTime = 0.0f;
-            camX = 0.0f; camY = 5.0f; camZ = -5.0f; camYaw = 3.14159f; camPitch = -0.2f;
+
+            camX = 0.0f;
+            camY = 5.0f;
+            camZ = -5.0f;
+            camYaw = 1.5708f;
+            camPitch = 0.25f;
+
             InitStars();
         }
     }
@@ -212,7 +262,6 @@ void DrawGolem() {
             glPushMatrix();
             glTranslatef(gx, 0.0f, gz);
 
-            // 플레이어 바라보기
             float dx = camX - gx, dz = camZ - gz;
             float angle = atan2(dx, dz) * 180.0f / 3.141592f;
             glRotatef(angle, 0, 1, 0);
@@ -220,19 +269,15 @@ void DrawGolem() {
             glScalef(0.4f, 0.4f, 0.4f);
             glTranslatef(0.0f, -0.6f, 0.0f);
 
-            // 골렘 모델링 (큐브 조합)
             glColor3f(0.85f, 0.85f, 0.85f);
-            // 다리
             glPushMatrix(); glTranslatef(-0.4f, 0.75f, 0.0f); glScalef(0.6f, 1.5f, 0.6f); glutSolidCube(1.0f); glPopMatrix();
             glPushMatrix(); glTranslatef(0.4f, 0.75f, 0.0f); glScalef(0.6f, 1.5f, 0.6f); glutSolidCube(1.0f); glPopMatrix();
-            // 몸통
             glPushMatrix(); glTranslatef(0.0f, 2.0f, 0.0f); glScalef(1.0f, 1.2f, 0.7f); glutSolidCube(1.0f); glPopMatrix();
             glPushMatrix(); glTranslatef(0.0f, 2.8f, 0.0f); glScalef(1.8f, 0.8f, 0.9f); glutSolidCube(1.0f); glPopMatrix();
-            // 팔
             glPushMatrix(); glTranslatef(-1.1f, 2.0f, 0.0f); glScalef(0.5f, 2.2f, 0.6f); glutSolidCube(1.0f); glPopMatrix();
             glPushMatrix(); glTranslatef(1.1f, 2.0f, 0.0f); glScalef(0.5f, 2.2f, 0.6f); glutSolidCube(1.0f); glPopMatrix();
-            // 머리 & 눈
             glPushMatrix(); glTranslatef(0.0f, 3.5f, -0.1f); glScalef(0.7f, 0.8f, 0.7f); glutSolidCube(1.0f); glPopMatrix();
+
             glColor3f(0.8f, 0.0f, 0.0f);
             glPushMatrix(); glTranslatef(-0.2f, 3.6f, 0.26f); glScalef(0.15f, 0.1f, 0.1f); glutSolidCube(1.0f); glPopMatrix();
             glPushMatrix(); glTranslatef(0.2f, 3.6f, 0.26f); glScalef(0.15f, 0.1f, 0.1f); glutSolidCube(1.0f); glPopMatrix();
@@ -260,9 +305,12 @@ void DrawUIMessage() {
     glEnable(GL_DEPTH_TEST); glEnable(GL_LIGHTING); glEnable(GL_TEXTURE_2D);
     glPopMatrix(); glMatrixMode(GL_PROJECTION); glPopMatrix(); glMatrixMode(GL_MODELVIEW);
 }
+
+// -----------------------------------------------------
+// 탈출 경로 기반 오브젝트 배치 로직 (네 코드 그대로)
+// -----------------------------------------------------
 static std::vector<std::pair<int, int>> ComputeEscapePath()
 {
-    // 미로 내부 시작/끝(입구 바깥 칸 말고 실제 내부 셀)
     const int sx = 1, sy = 1;
     const int ex = MAZE_W - 2, ey = MAZE_H - 2;
 
@@ -305,7 +353,6 @@ static std::vector<std::pair<int, int>> ComputeEscapePath()
     if (!visited[ey][ex])
         return {};
 
-    // 경로 복원
     std::vector<std::pair<int, int>> path;
     int cx = ex, cy = ey;
     while (!(cx == sx && cy == sy)) {
@@ -320,7 +367,6 @@ static std::vector<std::pair<int, int>> ComputeEscapePath()
     return path;
 }
 
-// 오브젝트 배치 로직 (함정 + 메인 + 골렘)
 void InitEmotionObjects() {
     g_worldObjects.clear();
 
@@ -335,20 +381,14 @@ void InitEmotionObjects() {
     if (idxHappy < 0) idxHappy = 0;
     if (idxTrap < 0) idxTrap = 0;
 
-    // 사용자 모델 없으면 기본 감정으로 대체
     if (idxUser < 0) {
         std::cout << "[SYSTEM] User model not found. Using default.\n";
-        idxUser = (idxSad >= 0) ? idxSad : 0; // 여기서는 슬픔을 기본으로 잡아도 자연스러움
+        idxUser = (idxSad >= 0) ? idxSad : 0;
     }
 
-    // ----------------------------
-    // 1) 탈출 경로 계산
-    // ----------------------------
     std::vector<std::pair<int, int>> escapePath = ComputeEscapePath();
 
-    // 경로가 비정상일 때를 대비한 안전장치
     if (escapePath.size() < 5) {
-        // fallback: 예전 방식처럼 PATH에서 뽑되, 최소한 크래시 방지
         for (int i = 0; i < 3; ++i) {
             int tx, ty;
             do {
@@ -359,7 +399,6 @@ void InitEmotionObjects() {
             AddObjectGrid(emotions[i], tx, ty, 0.2f, 0.2f, 0);
         }
 
-        // 함정도 6개 이하로만
         int trapTotal = (rand() % 6) + 1;
         for (int i = 0; i < trapTotal; ++i) {
             int tx, ty;
@@ -375,10 +414,6 @@ void InitEmotionObjects() {
         return;
     }
 
-    // ----------------------------
-    // 2) 메인 감정은 "탈출 경로 위"에만 배치
-    // ----------------------------
-    // 시작/끝 인접부는 너무 가까울 수 있으니 후보에서 제외
     std::vector<std::pair<int, int>> candidates;
     for (size_t i = 1; i + 1 < escapePath.size(); ++i) {
         candidates.push_back(escapePath[i]);
@@ -395,7 +430,6 @@ void InitEmotionObjects() {
         };
 
     for (int i = 0; i < 3; ++i) {
-        // 후보가 부족하면 그냥 남은 PATH에서 찾는 안전장치
         int tx = -1, ty = -1;
 
         if (i < (int)candidates.size()) {
@@ -413,15 +447,11 @@ void InitEmotionObjects() {
         AddObjectGrid(emotions[i], tx, ty, 0.2f, 0.2f, 0);
     }
 
-    // ----------------------------
-    // 3) 함정은 "총합 6개 이하"로 랜덤 배치
-    // ----------------------------
-    int trapTotal = (rand() % 6) + 1; // 1~6
+    int trapTotal = (rand() % 6) + 1;
 
     for (int i = 0; i < trapTotal; ++i) {
         int tx, ty;
 
-        // 메인 감정과 같은 칸은 피하도록
         int guard = 0;
         do {
             tx = rand() % (MAZE_W - 2) + 1;
@@ -429,30 +459,45 @@ void InitEmotionObjects() {
             if (++guard > 5000) break;
         } while (maze[ty][tx] != PATH || used.count(key(tx, ty)) > 0);
 
-        int trapType = (rand() % 3) + 1; // 1:좌절, 2:혼란, 3:외로움
+        int trapType = (rand() % 3) + 1;
         AddObjectGrid(idxTrap, tx, ty, 1.0f, 0.2f, trapType);
 
         used.insert(key(tx, ty));
     }
 
-    // ----------------------------
-    // 4) 골렘(도착점)
-    // ----------------------------
     AddObjectGrid(0, MAZE_W - 2, MAZE_H - 2, 0.0f, 0.0f, 99);
 }
+
+// -----------------------------------------------------
 
 void Display() {
 
     if (g_gameState == STATE_MODELER) {
-        DrawModeler();      // 모델러 화면 그리기
-        glutSwapBuffers();  // 화면 갱신
-        return;             // 아래쪽(미로 그리기)은 실행하지 않고 종료
+        DrawModeler();
+        glutSwapBuffers();
+        return;
     }
-    if (g_gameState == STATE_CUTSCENE) { DrawNightScene(); glutSwapBuffers(); return; }
-    if (g_gameState == STATE_JOY_SCENE) { DrawJoyScene(); glutSwapBuffers(); return; }
+
+    if (g_gameState == STATE_CUTSCENE) {
+        DrawNightScene();
+        glutSwapBuffers();
+        return;
+    }
+
+    if (g_gameState == STATE_ANGER_SCENE) {   // ★ [NEW]
+        DrawAngerScene();
+        glutSwapBuffers();
+        return;
+    }
+
+    if (g_gameState == STATE_JOY_SCENE) {
+        DrawJoyScene();
+        glutSwapBuffers();
+        return;
+    }
 
     if (g_gameState == STATE_ENDING) {
-        DrawEndingCredits(); // Renderer.cpp에 있는 엔딩 함수 호출
+        DrawEndingCredits();
         glutSwapBuffers();
         return;
     }
@@ -470,9 +515,9 @@ void Display() {
     glEnable(GL_TEXTURE_2D);
     DrawMaze3D();
     DrawSORObjects(CELL_SIZE);
-    DrawGolem(); // ★ 골렘 그리기
+    DrawGolem();
     DrawMiniMap();
-    DrawUIMessage(); // ★ UI 그리기
+    DrawUIMessage();
     glutSwapBuffers();
 }
 
@@ -487,7 +532,7 @@ void KeyDownHelper(unsigned char k, int x, int y) {
     glutPostRedisplay();
 }
 
-// [NEW] 마우스 콜백
+// 마우스 콜백
 void MouseHelper(int button, int state, int x, int y) {
     if (g_gameState == STATE_MODELER) {
         HandleModelerMouse(button, state, x, y);
@@ -500,7 +545,7 @@ void MotionHelper(int x, int y) {
 }
 
 void Idle() {
-    if (g_gameState == STATE_MODELER) return; // 모델러는 Idle 없음
+    if (g_gameState == STATE_MODELER) return;
 
     static int lastTime = 0;
     int now = glutGet(GLUT_ELAPSED_TIME);
@@ -508,20 +553,26 @@ void Idle() {
     if (dt > 0.1f) dt = 0.1f;
     lastTime = now;
 
-    // ★ 타이머 감소
     if (g_slowTimer > 0) g_slowTimer -= dt;
     if (g_confusionTimer > 0) g_confusionTimer -= dt;
     if (g_darknessTimer > 0) g_darknessTimer -= dt;
     if (g_uiMessageTimer > 0) g_uiMessageTimer -= dt;
 
-    CheckTrapCollision(); // ★ 충돌 체크
+    CheckTrapCollision();
 
     if (g_gameState == STATE_CUTSCENE) {
-        UpdateCamera(dt); g_cutsceneTime += dt;
+        UpdateCamera(dt);
+        g_cutsceneTime += dt;
+        if (g_cutsceneTime >= CUTSCENE_DURATION) ReturnToMaze();
+    }
+    else if (g_gameState == STATE_ANGER_SCENE) {   // ★ [NEW]
+        UpdateCamera(dt);
+        g_cutsceneTime += dt;
         if (g_cutsceneTime >= CUTSCENE_DURATION) ReturnToMaze();
     }
     else if (g_gameState == STATE_JOY_SCENE) {
-        UpdateCamera(dt); g_cutsceneTime += dt;
+        UpdateCamera(dt);
+        g_cutsceneTime += dt;
         if (g_cutsceneTime >= 15.0f) ReturnToMaze();
     }
     else if (g_gameState == STATE_ENDING) {
@@ -530,13 +581,17 @@ void Idle() {
     else {
         UpdateCamera(dt);
         UpdateJump(dt);
+
         float exitX_Limit = (MAZE_W - 2.0f) * CELL_SIZE;
         float exitZ_Min = (MAZE_H - 3.0f) * CELL_SIZE;
         float exitZ_Max = (MAZE_H - 1.0f) * CELL_SIZE;
+
         if (camX > exitX_Limit && camZ > exitZ_Min && camZ < exitZ_Max && isOnGround && g_textureStage >= 3) {
-            g_gameState = STATE_ENDING; g_cutsceneTime = 0.0f;
+            g_gameState = STATE_ENDING;
+            g_cutsceneTime = 0.0f;
         }
     }
+
     glutPostRedisplay();
 }
 
@@ -549,7 +604,7 @@ int main(int argc, char** argv) {
     GenerateMaze();
     std::srand((unsigned int)std::time(0));
 
-    // [중요] 시작 상태를 모델러로 설정
+    // 시작 상태를 모델러로
     g_gameState = STATE_MODELER;
     InitModeler();
 
@@ -564,7 +619,8 @@ int main(int argc, char** argv) {
 
     glClearColor(0.05f, 0.05f, 0.05f, 1);
     glEnable(GL_DEPTH_TEST);
-    LoadTextures();
+
+    LoadTextures();  // ★ Lava 텍스처 + Ocean + Video 포함
 
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
@@ -573,7 +629,6 @@ int main(int argc, char** argv) {
     glutSpecialFunc(SpecialDown);
     glutSpecialUpFunc(SpecialUp);
 
-    // [중요] 마우스 콜백 등록
     glutMouseFunc(MouseHelper);
     glutMotionFunc(MotionHelper);
 
