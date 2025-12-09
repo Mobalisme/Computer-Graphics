@@ -1,96 +1,85 @@
-Ôªø#include "Global.h"
-#include "SOR_Objects.h"
-
+#include "Global.h"
+#include "SOR_Objects.h" // ø¿∫Í¡ß∆Æ ±◊∏Æ±‚øÎ
 #include <iostream>
 #include <string>
 #include <cmath>
-#include <vector>
-#include <cstdlib>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-// ---------------- ÌÖçÏä§Ï≤ò Î°úÎçî ----------------
-static GLuint LoadTextureFromFile(const char* filename)
-{
+struct Star { float x, y, z; float brightness; };
+std::vector<Star> g_stars;
+
+GLuint LoadTextureFromFile(const char* filename) {
     int w, h, c;
     unsigned char* d = stbi_load(filename, &w, &h, &c, 0);
     if (!d) return 0;
 
-    GLuint tex = 0;
+    GLuint tex;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
-
     GLenum f = (c == 4) ? GL_RGBA : (c == 3 ? GL_RGB : GL_RED);
     glTexImage2D(GL_TEXTURE_2D, 0, f, w, h, 0, f, GL_UNSIGNED_BYTE, d);
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     stbi_image_free(d);
     return tex;
 }
 
-// Ïä¨Ìîî Î∞îÎã§ ÌÖçÏä§Ï≤ò(Î°úÏª¨ Î≥¥Í¥Ä)
-static GLuint g_oceanTex = 0;
-
-void ChangeWallTexture(int stage)
-{
+void ChangeWallTexture(int stage) {
+    // 1. ∏’¿˙ wall0.png / wall0.jpg µÓ ¥‹∞Ë∫∞ ∆ƒ¿œ¿ª √£Ω¿¥œ¥Ÿ.
     std::string path = "Textures/wall" + std::to_string(stage) + ".png";
     GLuint newTex = LoadTextureFromFile(path.c_str());
 
-    if (newTex == 0)
-    {
+    if (newTex == 0) {
+        // png∞° æ¯¿∏∏È jpg Ω√µµ
         path = "Textures/wall" + std::to_string(stage) + ".jpg";
         newTex = LoadTextureFromFile(path.c_str());
     }
 
-    if (newTex == 0 && stage == 0)
-    {
+    // 2. [«ŸΩ…] ∏∏æ‡ ∆ƒ¿œ¿ª ∏¯ √£æ“¥¬µ•, ±◊∞‘ '√≥¿Ω Ω√¿€(0¥‹∞Ë)'¿Ã∂Û∏È?
+    // -> ±‚∫ª Wall.png∏¶ ¥ÎΩ≈ ∑ŒµÂ«’¥œ¥Ÿ. (»∏ªˆ ∫Æ πÊ¡ˆ)
+    if (newTex == 0 && stage == 0) {
+        std::cout << "[SYSTEM] 'wall0' not found. Falling back to default 'Wall.png'\n";
+
         newTex = LoadTextureFromFile("Textures/Wall.png");
         if (newTex == 0) newTex = LoadTextureFromFile("Wall.png");
         if (newTex == 0) newTex = LoadTextureFromFile("wall.png");
     }
 
-    if (newTex != 0)
-    {
-        if (g_wallTex != 0) glDeleteTextures(1, &g_wallTex);
+    // 3. ≈ÿΩ∫√≥ ¿˚øÎ
+    if (newTex != 0) {
+        if (g_wallTex != 0) glDeleteTextures(1, &g_wallTex); // ±‚¡∏ ∏ﬁ∏∏Æ ¡§∏Æ
         g_wallTex = newTex;
-        std::cout << "[SYSTEM] Wall texture stage " << stage << " applied.\n";
+        std::cout << "[SYSTEM] Wall texture set to Stage " << stage << "\n";
     }
-    else
-    {
-        std::cout << "[WARNING] Wall texture for stage " << stage << " not found.\n";
+    else {
+        std::cout << "[WARNING] Failed to load wall texture for Stage " << stage << "\n";
     }
 }
 
-void LoadTextures()
-{
+void LoadTextures() {
+  
     ChangeWallTexture(0);
 
-    g_floorTex = LoadTextureFromFile("Textures/floor.png");
-    if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("Textures/floor.jpg");
-    if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("Textures/floor.jpeg");
-    if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("floor.jpg");
+    // πŸ¥⁄ ∑ŒµÂ
+    g_floorTex = LoadTextureFromFile("Textures/floor.jpeg");
     if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("floor.jpeg");
+    if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("Textures/floor.jpg");
+    if (g_floorTex == 0) g_floorTex = LoadTextureFromFile("floor.jpg");
 
-    // ---- Ïä¨Ìîî Ocean ÌÖçÏä§Ï≤ò ----
-    if (g_oceanTex != 0) glDeleteTextures(1, &g_oceanTex);
-    g_oceanTex = LoadTextureFromFile("Textures/Ocean.png");
-    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Textures/Ocean.jpg");
-    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Textures/Ocean.jpeg");
-    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Ocean.png");
-    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Ocean.jpg");
-    if (g_oceanTex == 0) g_oceanTex = LoadTextureFromFile("Ocean.jpeg");
+    if (g_floorTex) std::cout << "[SYSTEM] Floor texture loaded.\n";
+    else std::cout << "[WARNING] Floor texture NOT found.\n";
 
-    // ÏòÅÏÉÅ ÌîÑÎ†àÏûÑ (Video/1.jpg ...)
+    // ∫Òµø¿ «¡∑π¿” ∑ŒµÂ
     g_videoFrames.clear();
-    for (int i = 1; i <= 120; ++i)
-    {
-        std::string vpath = "Video/" + std::to_string(i) + ".jpg";
-        GLuint t = LoadTextureFromFile(vpath.c_str());
-        if (t != 0)
-        {
+    std::cout << "[SYSTEM] Loading video frames...\n";
+    for (int i = 1; i <= 120; ++i) {
+        std::string path = "Video/" + std::to_string(i) + ".jpg";
+        GLuint t = LoadTextureFromFile(path.c_str());
+
+        // ∫Òµø¿¥¬ π›∫π(REPEAT) ¥ÎΩ≈ ¥√¿Ã±‚(CLAMP)∞° ¡¡¿Ω
+        if (t != 0) {
             glBindTexture(GL_TEXTURE_2D, t);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
@@ -99,608 +88,156 @@ void LoadTextures()
     }
 }
 
-// ---------------- ÎØ∏Î°ú Î†åÎçî ----------------
-static void DrawWallBlock(float gx, float gz)
-{
+void DrawWallBlock(float gx, float gz) {
+    glPushMatrix(); // «ˆ¿Á ¿ßƒ° ¿˙¿Â
+
+    // g_confusionTimer¥¬ Global.hø° º±æµ«æÓ ¿÷æÓæﬂ «’¥œ¥Ÿ.
+    if (g_confusionTimer > 0) {
+        float time = glutGet(GLUT_ELAPSED_TIME) * 0.005f;
+        // ªÁ¿Œ «‘ºˆ(sin)∏¶ ¿ÃøÎ«ÿ ≈©±‚∏¶ ≈∞ø¸¥Ÿ ¡Ÿø¥¥Ÿ π›∫π
+        float s = 1.0f + sin(time + gx * 0.5f) * 0.3f;
+
+        // ∫Æ¿« ¡ﬂΩ…¿ª ±‚¡ÿ¿∏∑Œ ≈©±‚ ¡∂¿˝ (æ» ±◊∑Ø∏È ∫Æ¿Ã π–∑¡≥≤)
+        glTranslatef(gx * CELL_SIZE + CELL_SIZE / 2, 0, gz * CELL_SIZE + CELL_SIZE / 2);
+        glScalef(s, 1.0f, s);
+        glTranslatef(-(gx * CELL_SIZE + CELL_SIZE / 2), 0, -(gz * CELL_SIZE + CELL_SIZE / 2));
+    }
+
     float x0 = gx * CELL_SIZE, x1 = (gx + 1) * CELL_SIZE;
     float z0 = gz * CELL_SIZE, z1 = (gz + 1) * CELL_SIZE;
-
-    glBindTexture(GL_TEXTURE_2D, g_wallTex);
-    glColor3f(1, 1, 1);
-
+    glBindTexture(GL_TEXTURE_2D, g_wallTex); glColor3f(1, 1, 1);
     glBegin(GL_QUADS);
+    glNormal3f(0, 0, 1);  glTexCoord2f(0, 0); glVertex3f(x0, 0, z0); glTexCoord2f(1, 0); glVertex3f(x1, 0, z0); glTexCoord2f(1, 1); glVertex3f(x1, WALL_HEIGHT, z0); glTexCoord2f(0, 1); glVertex3f(x0, WALL_HEIGHT, z0);
+    glNormal3f(0, 0, -1); glTexCoord2f(0, 0); glVertex3f(x1, 0, z1); glTexCoord2f(1, 0); glVertex3f(x0, 0, z1); glTexCoord2f(1, 1); glVertex3f(x0, WALL_HEIGHT, z1); glTexCoord2f(0, 1); glVertex3f(x1, WALL_HEIGHT, z1);
+    glNormal3f(-1, 0, 0); glTexCoord2f(0, 0); glVertex3f(x0, 0, z1); glTexCoord2f(1, 0); glVertex3f(x0, 0, z0); glTexCoord2f(1, 1); glVertex3f(x0, WALL_HEIGHT, z0); glTexCoord2f(0, 1); glVertex3f(x0, WALL_HEIGHT, z1);
+    glNormal3f(1, 0, 0);  glTexCoord2f(0, 0); glVertex3f(x1, 0, z0); glTexCoord2f(1, 0); glVertex3f(x1, 0, z1); glTexCoord2f(1, 1); glVertex3f(x1, WALL_HEIGHT, z1); glTexCoord2f(0, 1); glVertex3f(x1, WALL_HEIGHT, z0);
+    glEnd(); glBindTexture(GL_TEXTURE_2D, 0);
 
-    glNormal3f(0, 0, 1);
-    glTexCoord2f(0, 0); glVertex3f(x0, 0, z0);
-    glTexCoord2f(1, 0); glVertex3f(x1, 0, z0);
-    glTexCoord2f(1, 1); glVertex3f(x1, WALL_HEIGHT, z0);
-    glTexCoord2f(0, 1); glVertex3f(x0, WALL_HEIGHT, z0);
-
-    glNormal3f(0, 0, -1);
-    glTexCoord2f(0, 0); glVertex3f(x1, 0, z1);
-    glTexCoord2f(1, 0); glVertex3f(x0, 0, z1);
-    glTexCoord2f(1, 1); glVertex3f(x0, WALL_HEIGHT, z1);
-    glTexCoord2f(0, 1); glVertex3f(x1, WALL_HEIGHT, z1);
-
-    glNormal3f(-1, 0, 0);
-    glTexCoord2f(0, 0); glVertex3f(x0, 0, z1);
-    glTexCoord2f(1, 0); glVertex3f(x0, 0, z0);
-    glTexCoord2f(1, 1); glVertex3f(x0, WALL_HEIGHT, z0);
-    glTexCoord2f(0, 1); glVertex3f(x0, WALL_HEIGHT, z1);
-
-    glNormal3f(1, 0, 0);
-    glTexCoord2f(0, 0); glVertex3f(x1, 0, z0);
-    glTexCoord2f(1, 0); glVertex3f(x1, 0, z1);
-    glTexCoord2f(1, 1); glVertex3f(x1, WALL_HEIGHT, z1);
-    glTexCoord2f(0, 1); glVertex3f(x1, WALL_HEIGHT, z0);
-
-    glEnd();
+    glPopMatrix(); // °⁄ [√ﬂ∞°µ» ∫Œ∫–] ¿ßƒ° ∫π±∏
 }
 
-static void DrawFloor()
-{
-    float w = MAZE_W * CELL_SIZE;
-    float h = MAZE_H * CELL_SIZE;
-
-    glBindTexture(GL_TEXTURE_2D, g_floorTex);
-    glColor3f(1, 1, 1);
-
+void DrawFloor() {
+    float w = MAZE_W * CELL_SIZE, h = MAZE_H * CELL_SIZE;
+    glBindTexture(GL_TEXTURE_2D, g_floorTex); glColor3f(1, 1, 1);
     glBegin(GL_QUADS);
     glNormal3f(0, 1, 0);
-    glTexCoord2f(0, 0);            glVertex3f(0, 0, 0);
-    glTexCoord2f(MAZE_W, 0);       glVertex3f(w, 0, 0);
-    glTexCoord2f(MAZE_W, MAZE_H);  glVertex3f(w, 0, h);
-    glTexCoord2f(0, MAZE_H);       glVertex3f(0, 0, h);
-    glEnd();
+    glTexCoord2f(0, 0);       glVertex3f(0, 0, 0);
+    glTexCoord2f(MAZE_W, 0);  glVertex3f(w, 0, 0);
+    glTexCoord2f(MAZE_W, MAZE_H); glVertex3f(w, 0, h);
+    glTexCoord2f(0, MAZE_H);  glVertex3f(0, 0, h);
+    glEnd(); glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void DrawMaze3D()
-{
+void DrawMaze3D() {
     DrawFloor();
-    for (int z = 0; z < MAZE_H; ++z)
-        for (int x = 0; x < MAZE_W; ++x)
-            if (maze[z][x] == WALL)
-                DrawWallBlock((float)x, (float)z);
+    for (int z = 0; z < MAZE_H; ++z) for (int x = 0; x < MAZE_W; ++x)
+        if (maze[z][x] == WALL) DrawWallBlock((float)x, (float)z);
 }
 
-// ---------------- ÎØ∏ÎãàÎßµ ----------------
-void DrawMiniMap()
-{
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
+void DrawMiniMap() {
+    glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
     gluOrtho2D(0, winWidth, 0, winHeight);
+    glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadIdentity();
+    glDisable(GL_DEPTH_TEST); glDisable(GL_TEXTURE_2D); glDisable(GL_LIGHTING);
 
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    float ms = 200.0f, ox = winWidth - ms - 10, oy = winHeight - ms - 10;
+    float cw = ms / MAZE_W, ch = ms / MAZE_H;
 
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING);
-
-    float ms = 200.0f;
-    float ox = winWidth - ms - 10.0f;
-    float oy = winHeight - ms - 10.0f;
-    float cw = ms / MAZE_W;
-    float ch = ms / MAZE_H;
-
-    glColor4f(0, 0, 0, 0.6f);
-    glRectf(ox - 2, oy - 2, ox + ms + 2, oy + ms + 2);
-
+    glColor4f(0, 0, 0, 0.6f); glRectf(ox - 2, oy - 2, ox + ms + 2, oy + ms + 2);
     glColor3f(1, 1, 1);
-    for (int z = 0; z < MAZE_H; ++z)
-        for (int x = 0; x < MAZE_W; ++x)
-            if (maze[z][x] == WALL)
-                glRectf(ox + x * cw, oy + z * ch, ox + (x + 1) * cw, oy + (z + 1) * ch);
+    for (int z = 0; z < MAZE_H; ++z) for (int x = 0; x < MAZE_W; ++x)
+        if (maze[z][x] == WALL) glRectf(ox + x * cw, oy + z * ch, ox + (x + 1) * cw, oy + (z + 1) * ch);
 
-    for (const auto& obj : g_worldObjects)
-    {
-        if (obj.collected) continue;
-
-        if (obj.emotionId == EMO_SADNESS) glColor3f(0.4f, 0.7f, 1.0f);
-        else if (obj.emotionId == EMO_ANGER) glColor3f(1.0f, 0.3f, 0.2f);
-        else if (obj.emotionId == EMO_JOY) glColor3f(1.0f, 0.9f, 0.2f);
-        else glColor3f(1.0f, 1.0f, 1.0f);
-
-        float cx = ox + (obj.mazeX + 0.5f) * cw;
-        float cy = oy + (obj.mazeY + 0.5f) * ch;
-        glRectf(cx - 3, cy - 3, cx + 3, cy + 3);
+    glColor3f(1, 1, 0);
+    for (const auto& obj : g_worldObjects) {
+        if (!obj.collected) {
+            if (obj.type != 0) continue;
+            float cx = ox + (obj.mazeX + 0.5f) * cw, cy = oy + (obj.mazeY + 0.5f) * ch;
+            glRectf(cx - 2, cy - 2, cx + 2, cy + 2);
+        }
     }
 
     glColor3f(1, 0, 0);
-    float px = ox + (camX / (MAZE_W * CELL_SIZE)) * ms;
-    float py = oy + (camZ / (MAZE_H * CELL_SIZE)) * ms;
-
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex2f(px, py);
-    for (int i = 0; i <= 16; ++i)
-    {
-        float a = i / 16.0f * 6.28318f;
-        glVertex2f(px + cosf(a) * 4.0f, py + sinf(a) * 4.0f);
-    }
+    float px = ox + (camX / (MAZE_W * CELL_SIZE)) * ms, py = oy + (camZ / (MAZE_H * CELL_SIZE)) * ms;
+    glBegin(GL_TRIANGLE_FAN); glVertex2f(px, py);
+    for (int i = 0; i <= 16; ++i) glVertex2f(px + cos(i / 16.0f * 6.28f) * 4, py + sin(i / 16.0f * 6.28f) * 4);
     glEnd();
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST); glEnable(GL_TEXTURE_2D);
     if (g_gameState == STATE_PLAYING) glEnable(GL_LIGHTING);
-
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix(); glMatrixMode(GL_PROJECTION); glPopMatrix(); glMatrixMode(GL_MODELVIEW);
 }
 
-// ---------------- Ïä¨Ìîî(Î∞§/Î≥Ñ/ÏàòÎ©¥/Ïò§Î°úÎùº) ----------------
-struct Star { float x, y, z; float b; };
-static std::vector<Star> g_stars;
-
-void InitStars()
-{
+void InitStars() {
     g_stars.clear();
-    for (int i = 0; i < 220; ++i)
-    {
-        Star s;
-        s.x = -60.0f + (rand() % 120);
-        s.y = 12.0f + (rand() % 45);
-        s.z = -60.0f + (rand() % 120);
-        s.b = 0.35f + (rand() % 65) / 100.0f;
-        g_stars.push_back(s);
-    }
+    std::random_device rd; std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> pos(-80.0f, 80.0f), h(10.0f, 60.0f), b(0.5f, 1.0f);
+    for (int i = 0; i < 400; ++i) g_stars.push_back({ pos(gen), h(gen), pos(gen), b(gen) });
 }
 
-// ÏòÅÏÉÅ Ìå®ÎÑê(ÏÉÅÌïò Îí§ÏßëÌûò ÏàòÏ†ï: VÏ∂ï Î∞òÏ†Ñ)
-static void DrawVideoIfAny()
-{
-    if (g_videoFrames.empty()) return;
-
-    int idx = (int)(g_cutsceneTime * VIDEO_FPS) % (int)g_videoFrames.size();
-    GLuint tex = g_videoFrames[idx];
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-    glPushMatrix();
-    glTranslatef(0.0f, 7.5f, -18.0f);
-    glRotatef(5.0f, 1, 0, 0);
-    glScalef(10.0f, 5.6f, 1.0f);
-
-    glColor3f(1, 1, 1);
-    glBegin(GL_QUADS);
-    // V Îí§ÏßëÍ∏∞
-    glTexCoord2f(0, 1); glVertex3f(-1, -1, 0);
-    glTexCoord2f(1, 1); glVertex3f(1, -1, 0);
-    glTexCoord2f(1, 0); glVertex3f(1, 1, 0);
-    glTexCoord2f(0, 0); glVertex3f(-1, 1, 0);
-    glEnd();
-
-    glPopMatrix();
+float GetWaveHeight(float x, float z, float t) {
+    return sinf(x * 0.5f + t) * 0.5f + sinf(z * 0.3f + t * 0.8f) * 0.5f + sinf((x + z) * 0.2f + t * 1.5f) * 0.2f;
 }
 
-// Îã¨(Í∞ÑÎã® Î∞úÍ¥ë ÎîîÏä§ÌÅ¨)
-static void DrawMoon()
-{
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-    const float mx = -18.0f;
-    const float my = 32.0f;
-    const float mz = -40.0f;
-
-    // Í∏ÄÎ°úÏö∞
-    glColor4f(0.9f, 0.95f, 1.0f, 0.18f);
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(mx, my, mz);
-    for (int i = 0; i <= 36; ++i)
-    {
-        float a = i / 36.0f * 6.28318f;
-        float r = 6.0f;
-        glVertex3f(mx + cosf(a) * r, my + sinf(a) * r, mz);
-    }
-    glEnd();
-
-    // Î≥∏Ï≤¥
-    glColor4f(1.0f, 1.0f, 1.0f, 0.28f);
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(mx, my, mz);
-    for (int i = 0; i <= 36; ++i)
-    {
-        float a = i / 36.0f * 6.28318f;
-        float r = 3.2f;
-        glVertex3f(mx + cosf(a) * r, my + sinf(a) * r, mz);
-    }
-    glEnd();
-
-    glDisable(GL_BLEND);
-}
-
-// ‚òÖ Ï∂úÎ†ÅÏù¥Îäî Ocean ÏàòÎ©¥
-static void DrawSadShallowWater()
-{
-    const float startX = -25.0f;
-    const float startZ = -8.0f;
-    const float sizeX = 50.0f;
-    const float sizeZ = 60.0f;
-
-    const float waterBaseY = 0.02f;
-
-    // Ïã§Î£®Ïó£ Ï≤¥Í∞êÏùÑ ÏúÑÌï¥ Ìï¥ÏÉÅÎèÑ Ï¶ùÍ∞Ä
-    const int NX = 80;
-    const int NZ = 80;
-
-    float t = g_cutsceneTime;
-
-    glDisable(GL_LIGHTING);
-
-    if (g_oceanTex != 0)
-    {
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, g_oceanTex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    }
-    else
-    {
-        glDisable(GL_TEXTURE_2D);
-    }
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // ---- ÌååÎèÑ(ÌïµÏã¨: ÏßÑÌè≠/ÏßÑÌñâÌåå/ÎîîÌÖåÏùº) ----
-    auto waveY = [&](float xx, float zz)
-        {
-            // 1) ÌÅ∞ Ïä§Ïõ∞(ÎäêÎ¶∞ ÍøÄÎ†Å)
-            float swell =
-                sinf(xx * 0.10f + t * 0.90f) * 0.035f +
-                sinf(zz * 0.09f + t * 0.80f) * 0.030f;
-
-            // 2) ÎåÄÍ∞Å ÏßÑÌñâÌåå
-            float diag =
-                sinf((xx + zz) * 0.07f + t * 1.10f) * 0.028f;
-
-            // 3) ÏûîÎ¨ºÍ≤∞
-            float ripples =
-                sinf(xx * 0.35f - t * 1.60f) * 0.010f +
-                sinf(zz * 0.32f + t * 1.45f) * 0.010f;
-
-            return swell + diag + ripples;
-        };
-
-    // Îã¨Îπõ Î∞òÏÇ¨ Ï§ëÏã¨(Í∞ÑÎã® Í∞ÄÏö∞ÏãúÏïà)
-    auto moonReflection = [&](float xx, float zz)
-        {
-            float cx = -6.0f;
-            float cz = 10.0f;
-
-            float dx = (xx - cx);
-            float dz = (zz - cz);
-
-            float d2 = dx * dx + dz * dz;
-            float g = expf(-d2 * 0.02f);
-
-            float pulse = 0.85f + 0.15f * sinf(t * 1.2f);
-            return 0.10f * g * pulse;
-        };
-
-    auto shimmer = [&](float xx, float zz, float depth)
-        {
-            float s = 0.5f + 0.5f * sinf(xx * 0.55f - zz * 0.45f + t * 0.8f);
-            s = s * s;
-
-            float base = 0.07f * s * (1.0f - depth * 0.70f);
-            float moon = moonReflection(xx, zz);
-            return base + moon;
-        };
-
-    auto baseColor = [&](float depth, float add)
-        {
-            // Î∞ùÏùÄ ÏóêÎ©îÎûÑÎìú-Îî•Î∏îÎ£®
-            float nr = 0.10f, ng = 0.26f, nb = 0.36f;
-            float fr = 0.04f, fg = 0.12f, fb = 0.22f;
-
-            float r = nr * (1.0f - depth) + fr * depth;
-            float g = ng * (1.0f - depth) + fg * depth;
-            float b = nb * (1.0f - depth) + fb * depth;
-
-            r += add * 0.9f;
-            g += add * 1.1f;
-            b += add * 1.25f;
-
-            if (r > 1) r = 1; if (g > 1) g = 1; if (b > 1) b = 1;
-
-            glColor4f(r, g, b, 0.97f);
-        };
-
-    for (int iz = 0; iz < NZ; ++iz)
-    {
-        float z0 = startZ + sizeZ * (float)iz / (float)NZ;
-        float z1 = startZ + sizeZ * (float)(iz + 1) / (float)NZ;
-
-        float depth0 = (z0 - startZ) / sizeZ;
-        float depth1 = (z1 - startZ) / sizeZ;
-
-        glBegin(GL_TRIANGLE_STRIP);
-
-        for (int ix = 0; ix <= NX; ++ix)
-        {
-            float x = startX + sizeX * (float)ix / (float)NX;
-
-            // ---- UV ÌùêÎ¶Ñ(Ï≤¥Í∞ê Í∞ïÌôî) ----
-            float uBase = (x - startX) * 0.10f;
-            float vBase0 = (z0 - startZ) * 0.10f;
-            float vBase1 = (z1 - startZ) * 0.10f;
-
-            float uFlow = sinf(t * 0.20f + z0 * 0.03f) * 0.03f;
-            float vFlow = cosf(t * 0.18f + x * 0.03f) * 0.03f;
-
-            // z0
-            {
-                float wy = waveY(x, z0);
-                float add = shimmer(x, z0, depth0);
-                baseColor(depth0, add);
-
-                if (g_oceanTex != 0)
-                    glTexCoord2f(uBase + uFlow, vBase0 + vFlow);
-
-                glVertex3f(x, waterBaseY + wy, z0);
-            }
-
-            // z1
-            {
-                float wy = waveY(x, z1);
-                float add = shimmer(x, z1, depth1);
-                baseColor(depth1, add);
-
-                if (g_oceanTex != 0)
-                    glTexCoord2f(uBase + uFlow, vBase1 + vFlow);
-
-                glVertex3f(x, waterBaseY + wy, z1);
-            }
-        }
-
-        glEnd();
-    }
-
-    glDisable(GL_BLEND);
-
-    // Î®º Î∞îÎã§ ÌôïÏû•
-    glDisable(GL_TEXTURE_2D);
-    glColor3f(0.02f, 0.06f, 0.14f);
-    glBegin(GL_QUADS);
-    glVertex3f(-80, waterBaseY, 40);
-    glVertex3f(80, waterBaseY, 40);
-    glVertex3f(80, waterBaseY, 120);
-    glVertex3f(-80, waterBaseY, 120);
-    glEnd();
-
-    if (g_gameState == STATE_PLAYING)
-        glEnable(GL_LIGHTING);
-}
-
-// ‚òÖ Ïò§Î°úÎùº Î¶¨Î≥∏(Ìï®ÏàòÎäî ÎÇ®Í≤®ÎèÑ Î¨¥Î∞©, ÌïòÏßÄÎßå Ìò∏Ï∂úÏùÄ Ï†úÍ±∞)
-static void DrawAurora()
-{
-    float t = g_cutsceneTime;
-
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-    const int STEPS = 80;
-    const float X0 = -45.0f;
-    const float X1 = 45.0f;
-
-    glBegin(GL_QUAD_STRIP);
-
-    for (int i = 0; i <= STEPS; ++i)
-    {
-        float u = (float)i / (float)STEPS;
-        float x = X0 + (X1 - X0) * u;
-
-        float yTop = 24.0f + sinf(x * 0.08f + t * 0.15f) * 1.8f;
-        float yBot = yTop - (4.0f + sinf(x * 0.05f + t * 0.10f) * 0.8f);
-
-        float z = -35.0f + cosf(x * 0.06f + t * 0.08f) * 2.5f;
-
-        float phase = 0.5f + 0.5f * sinf(x * 0.10f + t * 0.12f);
-
-        float r = 0.06f + 0.10f * (1.0f - phase);
-        float g = 0.35f + 0.45f * phase;
-        float b = 0.18f + 0.25f * (1.0f - phase);
-
-        float aTop = 0.22f;
-        float aBot = 0.04f;
-
-        glColor4f(r, g, b, aTop);
-        glVertex3f(x, yTop, z);
-
-        glColor4f(r, g, b, aBot);
-        glVertex3f(x, yBot, z);
-    }
-
-    glEnd();
-
-    glDisable(GL_BLEND);
-}
-
-// ---------------- Ïä¨Ìîî Ïî¨ Î©îÏù∏ ----------------
-void DrawNightScene()
-{
-    // Ï†ÑÏ≤¥ ÌÜ§ ÏÉÅÌñ•
-    glClearColor(0.04f, 0.06f, 0.14f, 1);
+void DrawNightScene() {
+    glClearColor(0.01f, 0.01f, 0.05f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION); glLoadIdentity();
     gluPerspective(60.0, (float)winWidth / winHeight, 0.1, 300.0);
+    glMatrixMode(GL_MODELVIEW); glLoadIdentity();
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    float dx = cos(camYaw) * cos(camPitch), dy = sin(camPitch), dz = sin(camYaw) * cos(camPitch);
+    float waveY = sinf(g_cutsceneTime * 1.2f) * 0.15f;
+    gluLookAt(camX, camY + waveY, camZ, camX + dx, camY + dy + waveY, camZ + dz, 0, 1, 0);
 
-    float dx = cosf(camYaw) * cosf(camPitch);
-    float dy = sinf(camPitch);
-    float dz = sinf(camYaw) * cosf(camPitch);
-
-    gluLookAt(camX, camY, camZ,
-        camX + dx, camY + dy, camZ + dz,
-        0, 1, 0);
-
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
-
-    // Î≥Ñ
-    glPointSize(2.0f);
-    glBegin(GL_POINTS);
-    for (auto& s : g_stars)
-    {
-        float tw = 0.9f + 0.1f * sinf(g_cutsceneTime * 1.6f + s.x * 0.08f);
-        float b = s.b * tw;
-        glColor3f(b, b, b);
+    glDisable(GL_LIGHTING); glDisable(GL_TEXTURE_2D);
+    glPointSize(2.0f); glBegin(GL_POINTS);
+    for (const auto& s : g_stars) {
+        float tw = 0.8f + 0.2f * sinf(g_cutsceneTime * 5.0f + s.x);
+        glColor3f(s.brightness * tw, s.brightness * tw, s.brightness * tw);
         glVertex3f(s.x, s.y, s.z);
     }
     glEnd();
 
-    // Ïò§Î°úÎùº Ï†úÍ±∞: Ìò∏Ï∂úÌïòÏßÄ ÏïäÏùå
-    // DrawAurora();
+    glEnable(GL_TEXTURE_2D);
+    int frameIdx = (int)(g_cutsceneTime * 10);
+    if (frameIdx >= (int)g_videoFrames.size()) frameIdx = (int)g_videoFrames.size() - 1;
+    if (frameIdx < 0) frameIdx = 0;
+    if (!g_videoFrames.empty()) glBindTexture(GL_TEXTURE_2D, g_videoFrames[frameIdx]);
+    else glBindTexture(GL_TEXTURE_2D, g_wallTex);
 
-    // Îã¨ Ï∂îÍ∞Ä
-    DrawMoon();
-
-    // ÏàòÌèâÏÑ† ÏïàÍ∞ú(Î∞ùÍ∏∞/Í±∞Î¶¨ ÏôÑÌôî)
-    glEnable(GL_FOG);
-    {
-        GLfloat fogColor[4] = { 0.05f, 0.09f, 0.18f, 1.0f };
-        glFogfv(GL_FOG_COLOR, fogColor);
-
-        glFogi(GL_FOG_MODE, GL_LINEAR);
-        glFogf(GL_FOG_START, 16.0f);
-        glFogf(GL_FOG_END, 90.0f);
-
-        glHint(GL_FOG_HINT, GL_NICEST);
-    }
-
-    // Ï∂úÎ†ÅÏù¥Îäî ÏàòÎ©¥ + Ocean ÌÖçÏä§Ï≤ò + Îã¨Îπõ Î∞òÏßùÏûÑ
-    DrawSadShallowWater();
-
-    // ÏòÅÏÉÅ Ìå®ÎÑê
-    DrawVideoIfAny();
-
-    glDisable(GL_FOG);
-
-    glEnable(GL_LIGHTING);
-}
-
-// ---------------- Í∏∞ÏÅ®(Ï¥àÏõê) ----------------
-void InitFlowers()
-{
-    g_flowers.clear();
-    for (int i = 0; i < 120; ++i)
-    {
-        Flower f;
-        f.x = -12.0f + (rand() % 240) / 10.0f;
-        f.z = -12.0f + (rand() % 240) / 10.0f;
-        f.y = 0.0f;
-        f.r = 0.6f + (rand() % 40) / 100.0f;
-        f.g = 0.6f + (rand() % 40) / 100.0f;
-        f.b = 0.6f + (rand() % 40) / 100.0f;
-        f.scale = 0.15f + (rand() % 20) / 100.0f;
-        g_flowers.push_back(f);
-    }
-}
-
-void DrawJoyScene()
-{
-    glClearColor(0.75f, 0.90f, 1.0f, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(60.0, (float)winWidth / winHeight, 0.1, 300.0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    float dx = cosf(camYaw) * cosf(camPitch);
-    float dy = sinf(camPitch);
-    float dz = sinf(camYaw) * cosf(camPitch);
-
-    gluLookAt(camX, camY, camZ,
-        camX + dx, camY + dy, camZ + dz,
-        0, 1, 0);
-
+    glPushMatrix(); glTranslatef(0.0f, 25.0f, 45.0f);
+    float flk = 0.95f + (rand() % 5) * 0.01f; glColor3f(flk, flk, flk);
+    glBegin(GL_QUADS); glTexCoord2f(0, 1); glVertex3f(-24, -13.5, 0); glTexCoord2f(1, 1); glVertex3f(24, -13.5, 0); glTexCoord2f(1, 0); glVertex3f(24, 13.5, 0); glTexCoord2f(0, 0); glVertex3f(-24, 13.5, 0); glEnd(); glPopMatrix();
     glDisable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING);
 
-    glColor3f(0.25f, 0.75f, 0.25f);
-    glBegin(GL_QUADS);
-    glVertex3f(-40, 0, -40);
-    glVertex3f(40, 0, -40);
-    glVertex3f(40, 0, 40);
-    glVertex3f(-40, 0, 40);
-    glEnd();
+    float seaY = -1.0f;
+    if (g_cutsceneTime > 12.5f) seaY += (g_cutsceneTime - 12.5f) * (g_cutsceneTime - 12.5f) * 6.0f;
+    glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.0f, 0.15f, 0.4f, 0.85f);
+    for (float z = -100; z < 100; z += 2.5f) {
+        glBegin(GL_QUAD_STRIP);
+        for (float x = -100; x <= 100; x += 2.5f) {
+            glVertex3f(x, seaY + GetWaveHeight(x, z, g_cutsceneTime), z);
+            glVertex3f(x, seaY + GetWaveHeight(x, z + 2.5f, g_cutsceneTime), z + 2.5f);
+        }
+        glEnd();
+    }
+    glDisable(GL_BLEND);
 
-    for (auto& f : g_flowers)
-    {
+    if (seaY < 5.0f) {
         glPushMatrix();
-        glTranslatef(f.x, 0.05f, f.z);
-        glScalef(f.scale, f.scale, f.scale);
-        glColor3f(f.r, f.g, f.b);
-        glutSolidSphere(1.0, 8, 8);
+        float bY = seaY + GetWaveHeight(0, 5.0f, g_cutsceneTime);
+        glTranslatef(0, bY + 1.0f, 5.0f);
+        glRotatef(cosf(g_cutsceneTime * 0.8f) * 4.0f, 1, 0, 0); glRotatef(sinf(g_cutsceneTime * 0.6f) * 2.0f, 0, 0, 1); glRotatef(180, 0, 1, 0);
+        glScalef(2.5f, 2.5f, 2.5f);
+        glColor3f(0.45f, 0.25f, 0.1f); glBegin(GL_TRIANGLES);
+        glVertex3f(-1, 0.5, -1.5); glVertex3f(1, 0.5, -1.5); glVertex3f(0, 0, 1.5);
+        glVertex3f(-1, 0.5, -1.5); glVertex3f(0, 0, 1.5); glVertex3f(0, 0, -1);
+        glVertex3f(1, 0.5, -1.5); glVertex3f(0, 0, -1); glVertex3f(0, 0, 1.5);
+        glColor3f(0.6f, 0.45f, 0.25f); glVertex3f(-1, 0.5, -1.5); glVertex3f(0, 0.5, 1.8); glVertex3f(1, 0.5, -1.5); glEnd();
+        glColor3f(0.3f, 0.2f, 0.1f); glLineWidth(6.0f); glBegin(GL_LINES); glVertex3f(0, 0.5, 0); glVertex3f(0, 3.5, 0); glEnd();
+        glColor4f(0.95f, 0.95f, 0.95f, 0.9f); glEnable(GL_BLEND); glBegin(GL_TRIANGLES); glVertex3f(0, 3.5, 0); glVertex3f(0, 1.0, 0); glVertex3f(1.5, 1.2, 0.3); glEnd(); glDisable(GL_BLEND);
         glPopMatrix();
     }
-
-    DrawVideoIfAny();
-
-    glEnable(GL_LIGHTING);
-}
-
-// ---------------- ÏóîÎî© ÌÅ¨Î†àÎîß ----------------
-static void DrawString(float x, float y, const char* s)
-{
-    glRasterPos2f(x, y);
-    for (const char* p = s; *p; ++p)
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *p);
-}
-
-void DrawEndingCredits()
-{
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0, winWidth, 0, winHeight);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
-
-    float y = -100.0f + g_cutsceneTime * 40.0f;
-
-    glColor3f(1, 1, 1);
-    DrawString(80, y + 0, "Emotion.exe");
-    DrawString(80, y + 40, "AI Robot Emotion Maze");
-    DrawString(80, y + 100, "Team:");
-    DrawString(80, y + 140, "- Member A");
-    DrawString(80, y + 180, "- Member B");
-    DrawString(80, y + 220, "- Member C");
-    DrawString(80, y + 300, "Thanks for playing");
-
-    glEnable(GL_DEPTH_TEST);
-
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
 }

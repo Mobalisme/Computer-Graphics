@@ -1,0 +1,27 @@
+﻿  Global.cpp
+  Main.cpp
+  Maze.cpp
+  Player.cpp
+  Renderer.cpp
+C:\CG_Team_Project\Emotion\Renderer.cpp(188,86): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
+C:\CG_Team_Project\Emotion\Renderer.cpp(190,157): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
+C:\CG_Team_Project\Emotion\Renderer.cpp(190,152): warning C4305: '인수': 'double'에서 'GLfloat'(으)로 잘립니다.
+  SOR_Objects.cpp
+  코드를 생성하고 있습니다...
+Main.obj : error LNK2019: __imp_glutInitWindowSizemain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutInitDisplayModemain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutMainLoopmain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutPostRedisplay"void __cdecl Idle(void)" (?Idle@@YAXXZ) 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutSwapBuffers"void __cdecl Display(void)" (?Display@@YAXXZ) 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutIdleFuncmain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutKeyboardFuncmain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutSpecialFuncmain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutReshapeFuncmain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutDisplayFuncmain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutKeyboardUpFuncmain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutSpecialUpFuncmain 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp_glutGet"void __cdecl Idle(void)" (?Idle@@YAXXZ) 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp___glutInitWithExitglutInit_ATEXIT_HACK 함수에서 참조되는 확인할 수 없는 외부 기호
+Main.obj : error LNK2019: __imp___glutCreateWindowWithExitglutCreateWindow_ATEXIT_HACK 함수에서 참조되는 확인할 수 없는 외부 기호
+C:\CG_Team_Project\freeglut-3.2.1_artech\lib\freeglut.lib : warning LNK4272: 'x86' 라이브러리 컴퓨터 종류가 'x64' 대상 컴퓨터 종류와 충돌합니다.
+C:\CG_Team_Project\Emotion\x64\Debug\Emotion.exe : fatal error LNK1120: 15개의 확인할 수 없는 외부 참조입니다.

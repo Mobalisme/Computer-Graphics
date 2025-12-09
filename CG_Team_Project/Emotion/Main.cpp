@@ -1,462 +1,561 @@
 #include "Global.h"
 #include "SOR_Objects.h"
-#include "AngerMap.h"
-
 #include <iostream>
 #include <ctime>
 #include <queue>
 #include <algorithm>
+#include <string> 
 #include <cmath>
 
-// -------------------- Î™®Îç∏ ÏÑ§Ï†ï --------------------
-// ÎÑ§ ÏöîÍµ¨ Î∞òÏòÅ: ÎãπÎ∂ÑÍ∞Ñ model_data.txt ÌïòÎÇòÎ°ú ÌÜµÏùº
-static const bool  USE_SINGLE_MODEL = true;
-static const char* MODEL_SINGLE = "model_data.txt";
-static const char* MODEL_SAD = "sad.txt";
-static const char* MODEL_ANGER = "anger.txt";
-static const char* MODEL_JOY = "happy.txt";
 
-// -------------------- Í∑∏Î¶ºÏûê ÌñâÎ†¨ --------------------
-static void BuildShadowMatrix(GLfloat shadowMat[4][4], const GLfloat light[4], const GLfloat plane[4])
-{
+struct EmotionData {
+    // ¿€¿∫ ∞®¡§
+    int frustrationCount = 0;
+    int confusionCount = 0;
+    int lonelinessCount = 0;
+
+    // ≈´ ∞®¡§
+    bool hasSadness = false;
+    bool hasAnger = false;
+    bool hasHappiness = false;
+};
+
+EmotionData g_emotionData; // ∫Øºˆ ¿Ã∏ßµµ ∞„ƒ°¡ˆ æ ∞‘ ∫Ø∞Ê!
+
+// ø‹∫Œ «‘ºˆ º±æ
+void GenerateMaze();
+// InitEmotionObjects¥¬ ¿Ã ∆ƒ¿œø° ±∏«ˆ«‘
+void DrawMaze3D();
+void DrawMiniMap();
+void DrawNightScene();
+void LoadTextures();
+void InitStars();
+void UpdateCamera(float dt);
+void UpdateJump(float dt);
+void KeyboardDown(unsigned char k, int, int);
+void KeyboardUp(unsigned char k, int, int);
+void SpecialDown(int k, int, int);
+void SpecialUp(int k, int, int);
+
+// ±◊∏≤¿⁄ «‡∑ƒ ª˝º∫ «‘ºˆ
+void BuildShadowMatrix(GLfloat shadowMat[4][4], GLfloat light[4], GLfloat plane[4]) {
     GLfloat dot = plane[0] * light[0] + plane[1] * light[1] + plane[2] * light[2] + plane[3] * light[3];
-
     shadowMat[0][0] = dot - light[0] * plane[0]; shadowMat[1][0] = 0.f - light[0] * plane[1]; shadowMat[2][0] = 0.f - light[0] * plane[2]; shadowMat[3][0] = 0.f - light[0] * plane[3];
     shadowMat[0][1] = 0.f - light[1] * plane[0]; shadowMat[1][1] = dot - light[1] * plane[1]; shadowMat[2][1] = 0.f - light[1] * plane[2]; shadowMat[3][1] = 0.f - light[1] * plane[3];
     shadowMat[0][2] = 0.f - light[2] * plane[0]; shadowMat[1][2] = 0.f - light[2] * plane[1]; shadowMat[2][2] = dot - light[2] * plane[2]; shadowMat[3][2] = 0.f - light[2] * plane[3];
     shadowMat[0][3] = 0.f - light[3] * plane[0]; shadowMat[1][3] = 0.f - light[3] * plane[1]; shadowMat[2][3] = 0.f - light[3] * plane[2]; shadowMat[3][3] = dot - light[3] * plane[3];
 }
 
-static void SetupLighting()
-{
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_NORMALIZE);
+void SetupLighting() {
+    glEnable(GL_LIGHTING); glEnable(GL_LIGHT0); glEnable(GL_NORMALIZE);
 
-    GLfloat diff[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    // °⁄ [√ﬂ∞°µ» ∫Œ∫–] ø‹∑ŒøÚ(Darkness) ªÛ≈¬∏È ∫˚¿ª æ∆¡÷ æ‡«œ∞‘(0.2), æ∆¥œ∏È π‡∞‘(0.8)
+    float bright = (g_darknessTimer > 0) ? 0.05f : 0.8f;
+
+    // ¡∂∏Ì ªˆªÛø° bright ∫Øºˆ ¿˚øÎ
+    GLfloat diff[] = { bright, bright, bright, 1.0f };
+
     glLightfv(GL_LIGHT0, GL_POSITION, g_lightPos);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diff);
+
+    // °⁄ [ªı∑Œ √ﬂ∞°µ» ∫Œ∫–] ∞À¿∫ æ»∞≥(Fog) »ø∞˙
+    if (g_darknessTimer > 0) {
+        glEnable(GL_FOG); // æ»∞≥ ƒ—±‚
+
+        // æ»∞≥ ªˆªÛ¿ª ∞À¿∫ªˆ(0,0,0)¿∏∑Œ º≥¡§
+        GLfloat fogColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        glFogfv(GL_FOG_COLOR, fogColor);
+
+        // æ»∞≥ ≥Ûµµ º≥¡§
+        glFogi(GL_FOG_MODE, GL_EXP2); // ¿⁄ø¨Ω∫∑¥∞‘ ¡¯«ÿ¡ˆ¥¬ ∏µÂ
+        glFogf(GL_FOG_DENSITY, 0.3f); // °⁄ ¿Ã º˝¿⁄∞° ≈¨ºˆ∑œ æ’¿Ã æ» ∫∏¿‘¥œ¥Ÿ (0.3 ~ 0.5 √ﬂ√µ)
+
+        glHint(GL_FOG_HINT, GL_NICEST); // ∞°¿Â ¡¡¿∫ «∞¡˙∑Œ ∑ª¥ı∏µ
+    }
+    else {
+        glDisable(GL_FOG); // ∆Úº“ø°¥¬ æ»∞≥ ≤Ù±‚
+    }
 
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 }
 
-// -------------------- ÎØ∏Î°ú Î≥µÍ∑Ä --------------------
-void ReturnToMaze()
-{
+void ReturnToMaze() {
+    std::cout << "\n>>> ƒ∆Ω≈ ¡æ∑·. ∫π±Õ«’¥œ¥Ÿ. <<<\n";
     g_gameState = STATE_PLAYING;
     glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 
+    // ¿ßƒ° ∫π±∏
     camX = savedCamX; camY = savedCamY; camZ = savedCamZ;
     camYaw = savedCamYaw; camPitch = savedCamPitch;
+    camVelY = 0.0f; isOnGround = true;
 
-    camVelY = 0.0f;
-    isOnGround = true;
+    // ∫π±Õ ¿ßƒ° ∫Æ ∂’±‚ (æ»¿¸¿Âƒ°)
+    int gx = (int)(camX / CELL_SIZE), gz = (int)(camZ / CELL_SIZE);
+    if (gx >= 0 && gx < MAZE_W && gz >= 0 && gz < MAZE_H) maze[gz][gx] = PATH;
 
     glutPostRedisplay();
 }
 
-// -------------------- ÎîîÎ≤ÑÍ∑∏ ÌÖîÎ†àÌè¨Ìä∏ --------------------
-static void TeleportToEmotion(int emotionId)
-{
-    for (auto& o : g_worldObjects)
-    {
-        if (o.collected) continue;
-        if (o.emotionId != emotionId) continue;
-
-        camX = (o.mazeX + 0.5f) * CELL_SIZE;
-        camZ = (o.mazeY + 0.5f) * CELL_SIZE;
-        camY = BASE_CAM_Y;
-
-        camVelY = 0.0f;
-        isOnGround = true;
-
-        camYaw = 0.0f;
-        camPitch = 0.0f;
-        return;
-    }
-}
-
-// -------------------- Í∞êÏ†ï Ïò§Î∏åÏ†ùÌä∏ Î∞∞Ïπò --------------------
-void InitEmotionObjects()
-{
-    ClearSORObjects();
-
-    const char* sadPath = USE_SINGLE_MODEL ? MODEL_SINGLE : MODEL_SAD;
-    const char* angerPath = USE_SINGLE_MODEL ? MODEL_SINGLE : MODEL_ANGER;
-    const char* joyPath = USE_SINGLE_MODEL ? MODEL_SINGLE : MODEL_JOY;
-
-    int idxSad = LoadAndRegisterModel(sadPath);
-    int idxAnger = LoadAndRegisterModel(angerPath);
-    int idxJoy = LoadAndRegisterModel(joyPath);
-
-    if (idxSad < 0 && idxAnger < 0 && idxJoy < 0)
-    {
-        std::cout << "[SOR] No model files found. Check working directory.\n";
-        return;
-    }
-
-    if (idxSad < 0)   idxSad = (idxAnger >= 0 ? idxAnger : idxJoy);
-    if (idxAnger < 0) idxAnger = idxSad;
-    if (idxJoy < 0)   idxJoy = idxSad;
-
-    // ÏãúÏûë~ÎèÑÏ∞© ÏµúÎã® Í≤ΩÎ°ú(BFS) Í∏∞Î∞ò Î∞∞Ïπò
-    struct Node { int x, z; };
-    std::vector<Node> path;
-
-    int sx = 1, sz = 1;
-    int ex = MAZE_W - 2, ez = MAZE_H - 2;
-
-    static bool visited[MAZE_H][MAZE_W];
-    static Node parent[MAZE_H][MAZE_W];
-
-    for (int z = 0; z < MAZE_H; ++z)
-        for (int x = 0; x < MAZE_W; ++x)
-            visited[z][x] = false;
-
-    std::queue<Node> q;
-    q.push({ sx, sz });
-    visited[sz][sx] = true;
-
-    int dx4[] = { 0, 0, -1, 1 };
-    int dz4[] = { -1, 1, 0, 0 };
-
-    bool found = false;
-
-    while (!q.empty())
-    {
-        Node c = q.front(); q.pop();
-        if (c.x == ex && c.z == ez) { found = true; break; }
-
-        for (int i = 0; i < 4; ++i)
-        {
-            int nx = c.x + dx4[i];
-            int nz = c.z + dz4[i];
-
-            if (nx < 0 || nx >= MAZE_W || nz < 0 || nz >= MAZE_H) continue;
-            if (visited[nz][nx]) continue;
-            if (maze[nz][nx] != PATH) continue;
-
-            visited[nz][nx] = true;
-            parent[nz][nx] = c;
-            q.push({ nx, nz });
-        }
-    }
-
-    if (found)
-    {
-        Node cur = { ex, ez };
-        while (!(cur.x == sx && cur.z == sz))
-        {
-            path.push_back(cur);
-            cur = parent[cur.z][cur.x];
-        }
-        path.push_back({ sx, sz });
-        std::reverse(path.begin(), path.end());
-    }
-
-    if (path.size() < 8)
-    {
-        AddObjectGrid(idxSad, 3, 3, 1.2f, 0.6f, 0.0f, 1.5f, 0.01f, 0.2f, EMO_SADNESS);
-        AddObjectGrid(idxAnger, 5, 3, 1.2f, 0.6f, 0.0f, 1.5f, 0.01f, 0.2f, EMO_ANGER);
-        AddObjectGrid(idxJoy, 7, 3, 1.2f, 0.6f, 0.0f, 1.5f, 0.01f, 0.2f, EMO_JOY);
-        return;
-    }
-
-    auto pickIndex = [&](float ratio)
-        {
-            int k = (int)(ratio * (float)path.size());
-            if (k < 1) k = 1;
-            if (k >= (int)path.size()) k = (int)path.size() - 1;
-            return k;
-        };
-
-    int k1 = pickIndex(0.25f);
-    int k2 = pickIndex(0.50f);
-    int k3 = pickIndex(0.75f);
-
-    AddObjectGrid(idxSad, path[k1].x, path[k1].z, 1.2f, 0.6f, 0.0f, 1.5f, 0.01f, 0.2f, EMO_SADNESS);
-    AddObjectGrid(idxAnger, path[k2].x, path[k2].z, 1.2f, 0.6f, 0.0f, 1.5f, 0.01f, 0.2f, EMO_ANGER);
-    AddObjectGrid(idxJoy, path[k3].x, path[k3].z, 1.2f, 0.6f, 0.0f, 1.5f, 0.01f, 0.2f, EMO_JOY);
-}
-
-// -------------------- Í∞êÏ†ï Ïò§Î∏åÏ†ùÌä∏ ÏäµÎìù/ÏßÑÏûÖ --------------------
-void TryCollectObject()
-{
-    if (g_gameState != STATE_PLAYING) return;
-
+// [ºˆ¡§µ» «‘ºˆ 1] ¿⁄µø¿∏∑Œ ∫Œµ˙«˚¿ª ∂ß √≥∏Æ («‘¡§, ∞·∞Ë)
+void CheckTrapCollision() {
     float px = camX, pz = camZ;
-    float bestD2 = 1.0f;
+
+    // 1. ¿¸√º ∞®¡ˆ π¸¿ß (≥À≥À«œ∞‘ ¿‚Ω¿¥œ¥Ÿ)
+    // ¿Ã π¸¿ß æ»ø° µÈæÓøÕæﬂ ¡§π– ∞ÀªÁ∏¶ Ω√¿€«’¥œ¥Ÿ.
+    float detectionRange = 1.5f;
+
+    for (int i = 0; i < (int)g_worldObjects.size(); ++i) {
+        if (g_worldObjects[i].collected) continue;
+        if (g_worldObjects[i].type == 0) continue;
+
+        float ox = (g_worldObjects[i].mazeX + 0.5f) * CELL_SIZE;
+        float oz = (g_worldObjects[i].mazeY + 0.5f) * CELL_SIZE;
+
+        float dx = px - ox;
+        float dz = pz - oz;
+        float dist = sqrt(dx * dx + dz * dz); // ø¯«¸ ∞≈∏Æ
+
+        // ¿œ¥‹ ±Ÿ√≥ø° ¿÷¥¬¡ˆ »Æ¿Œ
+        if (dist <= detectionRange) {
+            int t = g_worldObjects[i].type;
+
+            // ====================================================
+            // [∞Ò∑Ω(Type 99) : ≤ˆ¿˚¿” æ¯¥¬ "ªÛ¿⁄«¸" √Êµπ]
+            // ====================================================
+            if (t == 99) {
+                // (1) ¡ı∏Ì øœ∑· Ω√ ≈Î∞˙
+                if (g_emotionData.hasSadness && g_emotionData.hasAnger && g_emotionData.hasHappiness) {
+                    std::cout << ">> ¡ı∏Ì øœ∑·! ∞Ò∑Ω¿Ã ªÁ∂Û¡˝¥œ¥Ÿ.\n";
+                    g_worldObjects[i].collected = true;
+                    g_uiMessage = "GATE OPENED!";
+                    g_uiMessageTimer = 3.0f;
+                }
+                else {
+                    // (2) √Êµπ π∞∏Æ √≥∏Æ («ŸΩ…!)
+
+                    // ∞Ò∑Ω¿« '∏ˆ¡˝' ≈©±‚ (π›¡ˆ∏ß) : 0.6 ƒ≠
+                    float bodySize = 0.6f * CELL_SIZE;
+
+                    // «√∑π¿ÃæÓ∞° ∞Ò∑Ω¿« ∏ˆ¡˝ 'æ»'¿∏∑Œ µÈæÓø‘¥¬¡ˆ ≥◊∏≥™∞‘ ∞ÀªÁ (AABB)
+                    // ¿˝¥Î∞™(abs)¿ª Ω·º≠ X√‡, Z√‡ ∞¢∞¢ ∞ÀªÁ«’¥œ¥Ÿ.
+                    if (abs(dx) < bodySize && abs(dz) < bodySize) {
+
+                        // °⁄ µÈæÓø‘¥Ÿ∏È "∏ˆ¡˝∫∏¥Ÿ æ∆¡÷ ¡∂±› ¥ı π€"¿∏∑Œ π–æÓ≥¿¥œ¥Ÿ.
+                        // 0.61∑Œ π–æÓ≥ª∏È, 0.6∫∏¥Ÿ ≈©±‚ ∂ßπÆø° ¥Ÿ¿Ω ∞ÀªÁø°º≠ ∞…∏Æ¡ˆ æ Ω¿¥œ¥Ÿ!
+                        float pushOut = bodySize + 0.05f;
+
+                        // ¥ı ±Ì¿Ã µÈæÓø¬ √‡(Axis)¿ª ±‚¡ÿ¿∏∑Œ π–æÓ≥ø
+                        if (abs(dx) > abs(dz)) {
+                            // X√‡ πÊ«‚¿∏∑Œ π€¿∏∑Œ π–±‚
+                            if (dx > 0) camX = ox + pushOut; // ø¿∏•¬  π€¿∏∑Œ
+                            else        camX = ox - pushOut; // øﬁ¬  π€¿∏∑Œ
+                        }
+                        else {
+                            // Z√‡ πÊ«‚¿∏∑Œ π€¿∏∑Œ π–±‚
+                            if (dz > 0) camZ = oz + pushOut; // æ∆∑°¬  π€¿∏∑Œ
+                            else        camZ = oz - pushOut; // ¿ß¬  π€¿∏∑Œ
+                        }
+                    }
+
+                    // ∏ﬁΩ√¡ˆ¥¬ ±Ÿ√≥ø°∏∏ ¿÷æÓµµ ∂ÁøÚ
+                    g_uiMessage = "PROVE YOUR EMOTIONS";
+                    g_uiMessageTimer = 0.1f;
+                }
+                continue;
+            }
+
+            // ====================================================
+            // [«‘¡§ ∑Œ¡˜] (∫Ø∞Ê æ¯¿Ω)
+            // ====================================================
+            g_worldObjects[i].collected = true;
+
+            if (t == 1) { // ¡¬¿˝
+                g_emotionData.frustrationCount++;
+                g_slowTimer = 5.0f;
+                g_uiMessage = "Frustration!";
+                g_uiMessageTimer = 2.0f;
+            }
+            else if (t == 2) { // »•∂ı
+                g_emotionData.confusionCount++;
+                g_confusionTimer = 5.0f;
+                g_uiMessage = "Confusion!";
+                g_uiMessageTimer = 2.0f;
+            }
+            else if (t == 3) { // ø‹∑ŒøÚ
+                g_emotionData.lonelinessCount++;
+                g_darknessTimer = 5.0f;
+                g_uiMessage = "Loneliness!";
+                g_uiMessageTimer = 2.0f;
+            }
+        }
+    }
+}
+
+// [ºˆ¡§µ» «‘ºˆ 2] 'R' ≈∞∏¶ ¥≠∑∂¿ª ∂ß √≥∏Æ (≈´ ∞®¡§ »πµÊ)
+// [ºˆ¡§µ» «‘ºˆ] 'R' ≈∞∏¶ ¥≠∑∂¿ª ∂ß √≥∏Æ (≈´ ∞®¡§ »πµÊ + ∫Æ¡ˆ ∫Ø∞Ê)
+void TryCollectObject() {
+    float px = camX, pz = camZ;
+    float r2 = 2.0f; // ªÛ»£¿€øÎ π¸¿ß
     int best = -1;
 
-    for (int i = 0; i < (int)g_worldObjects.size(); ++i)
-    {
-        auto& o = g_worldObjects[i];
-        if (o.collected) continue;
+    // ∞°¿Â ∞°±ÓøÓ ø¿∫Í¡ß∆Æ √£±‚
+    for (int i = 0; i < (int)g_worldObjects.size(); ++i) {
+        if (g_worldObjects[i].collected) continue;
 
-        float ox = (o.mazeX + 0.5f) * CELL_SIZE;
-        float oz = (o.mazeY + 0.5f) * CELL_SIZE;
+        // Type 0¿Œ ∞Õ(≈´ ∞®¡§)∏∏ √£Ω¿¥œ¥Ÿ.
+        if (g_worldObjects[i].type != 0) continue;
+
+        float ox = (g_worldObjects[i].mazeX + 0.5f) * CELL_SIZE;
+        float oz = (g_worldObjects[i].mazeY + 0.5f) * CELL_SIZE;
         float d2 = (ox - px) * (ox - px) + (oz - pz) * (oz - pz);
-
-        if (d2 <= bestD2)
-        {
-            bestD2 = d2;
-            best = i;
-        }
+        if (d2 <= r2) { r2 = d2; best = i; }
     }
 
-    if (best < 0) return;
+    if (best != -1) {
+        // ≈´ ∞®¡§ »πµÊ!
+        g_worldObjects[best].collected = true;
+        std::cout << "∞®¡§ Ω¿µÊ! ƒ∆Ω≈ Ω√¿€.\n";
 
-    auto& obj = g_worldObjects[best];
-    obj.collected = true;
+        // ∞®¡§ ªÛ≈¬ æ˜µ•¿Ã∆Æ
+        if (!g_emotionData.hasSadness) g_emotionData.hasSadness = true;
+        else if (!g_emotionData.hasAnger) g_emotionData.hasAnger = true;
+        else g_emotionData.hasHappiness = true;
 
-    if (obj.emotionId >= 0 && obj.emotionId < EMO_MAIN_COUNT)
-        g_mainCollected[obj.emotionId] = true;
+        // =========================================================
+        // °⁄ [∫π±∏µ» ∫Œ∫–] ∫Æ ≈ÿΩ∫√≥(ªˆ±Ú) ∫Ø∞Ê ƒ⁄µÂ
+        // =========================================================
+        g_textureStage++;              // ¥‹∞Ë ¡ı∞°
+        ChangeWallTexture(g_textureStage); // °⁄ ¡÷ºÆ «ÿ¡¶! ¿Ã¡¶ ∫Æ ªˆ¿Ã πŸ≤Ú¥œ¥Ÿ.
 
-    if (g_textureStage < 3)
-    {
-        g_textureStage++;
-        ChangeWallTexture(g_textureStage);
-    }
+        // ƒ∆Ω≈ Ω√¿€ ∑Œ¡˜
+        savedCamX = camX; savedCamY = camY; savedCamZ = camZ;
+        savedCamYaw = camYaw; savedCamPitch = camPitch;
 
-    savedCamX = camX; savedCamY = camY; savedCamZ = camZ;
-    savedCamYaw = camYaw; savedCamPitch = camPitch;
+        g_gameState = STATE_CUTSCENE;
+        g_cutsceneTime = 0.0f;
 
-    g_cutsceneTime = 0.0f;
-
-    if (obj.emotionId == EMO_SADNESS)
-    {
-        g_gameState = STATE_SAD_SCENE;
-
-        // Ïπ¥Î©îÎùºÎ•º Îçî Î©ÄÎ¶¨ + Î∞îÎã§ÏóêÏÑú Ï°∞Í∏à Îçî ÏúÑÎ°ú
-        camX = 0.0f;
-        camY = 0.45f;
-        camZ = -4.8f;
-
-        camYaw = 3.14159f;
-        camPitch = -0.02f;
-
+        // ƒ´∏ﬁ∂Û ƒ∆Ω≈ ¿ßƒ°∑Œ ¿Ãµø
+        camX = 0.0f; camY = 5.0f; camZ = -5.0f;
+        camYaw = 3.14159f; camPitch = -0.2f;
         InitStars();
-    }
-    else if (obj.emotionId == EMO_ANGER)
-    {
-        g_gameState = STATE_ANGER_SCENE;
-
-        camX = 0.0f; camY = 2.0f; camZ = -8.0f;
-        camYaw = 0.0f; camPitch = 0.0f;
-
-        AngerMap::Enter();
-    }
-    else if (obj.emotionId == EMO_JOY)
-    {
-        g_gameState = STATE_JOY_SCENE;
-
-        camX = 0.0f; camY = 5.0f; camZ = 15.0f;
-        camYaw = -1.5708f; camPitch = -0.2f;
-
-        InitFlowers();
     }
 }
 
-// -------------------- ÌÇ§ ÏûÖÎ†• ÎùºÏö∞ÌåÖ --------------------
-static void KeyDownHelper(unsigned char k, int x, int y)
-{
-    if (k == 't' || k == 'T')
-    {
-        TryCollectObject();
-        if (g_gameState == STATE_ANGER_SCENE)
-            AngerMap::OnKeyDown(k);
-        return;
-    }
-
-    if (g_gameState == STATE_PLAYING)
-    {
-        if (k == '1') { TeleportToEmotion(EMO_SADNESS); return; }
-        if (k == '2') { TeleportToEmotion(EMO_ANGER);   return; }
-        if (k == '3') { TeleportToEmotion(EMO_JOY);     return; }
-    }
-
-    if (g_gameState == STATE_ANGER_SCENE)
-        AngerMap::OnKeyDown(k);
-
+void KeyDownHelper(unsigned char k, int x, int y) {
+    if (k == 'r' || k == 'R') TryCollectObject();
     KeyboardDown(k, x, y);
 }
 
-// -------------------- ÎîîÏä§ÌîåÎ†àÏù¥ --------------------
-static void Display()
-{
-    if (g_gameState == STATE_SAD_SCENE)
-    {
-        DrawNightScene();
-        glutSwapBuffers();
-        return;
+// [ªı∑Œ √ﬂ∞°/±≥√º] ≈∞∏¶ ∂ø ∂ß »£√‚µ«¥¬ «‘ºˆ
+void KeyboardUp(unsigned char k, int x, int y) {
+    // 1. «ÿ¥Á ≈∞ ≤Ù±‚
+    keyDown[k] = false;
+
+    // 2. °⁄ [«ŸΩ…] Shift ≈∞ ∂ßπÆø° ≤ø¿Ã¡ˆ æ µµ∑œ ¥Îº“πÆ¿⁄ µ— ¥Ÿ ∞≠¡¶∑Œ ≤Ù±‚
+    if (k >= 'a' && k <= 'z') {
+        // º“πÆ¿⁄∏¶ ∂√¿∏∏È, ¥ÎπÆ¿⁄µµ ∞∞¿Ã ≤˚ (øπ: 'w' ∂º∏È 'W'µµ ≤˚)
+        keyDown[k - 32] = false; 
     }
-    if (g_gameState == STATE_ANGER_SCENE)
-    {
-        glClearColor(0.02f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        gluPerspective(60.0, (float)winWidth / winHeight, 0.1, 200.0);
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        float dx = cosf(camYaw) * cosf(camPitch);
-        float dy = sinf(camPitch);
-        float dz = sinf(camYaw) * cosf(camPitch);
-
-        gluLookAt(camX, camY, camZ,
-            camX + dx, camY + dy, camZ + dz,
-            0, 1, 0);
-
-        glDisable(GL_LIGHTING);
-        glDisable(GL_TEXTURE_2D);
-
-        AngerMap::Render3D();
-        AngerMap::Render2D(winWidth, winHeight);
-
-        glutSwapBuffers();
-        return;
+    else if (k >= 'A' && k <= 'Z') {
+        // ¥ÎπÆ¿⁄∏¶ ∂√¿∏∏È, º“πÆ¿⁄µµ ∞∞¿Ã ≤˚ (øπ: 'W' ∂º∏È 'w'µµ ≤˚)
+        keyDown[k + 32] = false; 
     }
-    if (g_gameState == STATE_JOY_SCENE)
-    {
-        DrawJoyScene();
-        glutSwapBuffers();
-        return;
-    }
-    if (g_gameState == STATE_ENDING)
-    {
-        DrawEndingCredits();
-        glutSwapBuffers();
-        return;
+}
+
+// [ªı∑Œ √ﬂ∞°] »≠∏Èø° ∏ﬁΩ√¡ˆ∏¶ ∂ÁøÏ¥¬ «‘ºˆ
+void DrawUIMessage() {
+    // Ω√∞£¿Ã ¥Ÿ µ∆∞≈≥™ ∏ﬁΩ√¡ˆ∞° æ¯¿∏∏È ±◊∏Æ¡ˆ æ ¿Ω
+    if (g_uiMessageTimer <= 0) return;
+
+    // 2D »≠∏È ∏µÂ∑Œ ¿¸»Ø
+    glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
+    gluOrtho2D(0, winWidth, 0, winHeight);
+    glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadIdentity();
+    glDisable(GL_DEPTH_TEST); glDisable(GL_LIGHTING); glDisable(GL_TEXTURE_2D);
+
+    // ±€¿⁄ ªˆªÛ (±Ù∫˝¿Ã¥¬ »ø∞˙)
+    float blink = sinf(glutGet(GLUT_ELAPSED_TIME) * 0.01f);
+    if (blink > 0) glColor3f(1.0f, 0.0f, 0.0f); // ª°∞≠
+    else glColor3f(1.0f, 1.0f, 0.0f);           // ≥Î∂˚
+
+    // ±€¿⁄ ¿ßƒ° º≥¡§ (øÏ√¯ ªÛ¥‹, πÃ¥œ∏  æ∆∑°¬ )
+    float textX = winWidth - 280;
+    float textY = winHeight - 230;
+
+    glRasterPos2f(textX, textY);
+
+    // ±€¿⁄ «— ¿⁄ «— ¿⁄ √‚∑¬
+    for (char c : g_uiMessage) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
     }
 
-    // -------- ÎØ∏Î°ú ÌîåÎ†àÏù¥ --------
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    // ø¯∑° º≥¡§ ∫π±∏
+    glEnable(GL_DEPTH_TEST); glEnable(GL_LIGHTING); glEnable(GL_TEXTURE_2D);
+    glPopMatrix(); glMatrixMode(GL_PROJECTION); glPopMatrix(); glMatrixMode(GL_MODELVIEW);
+}
+
+// ≈ı∏Ì«— «œ¥√ªˆ ∞·∞Ë∏¶ ±◊∏Æ¥¬ «‘ºˆ
+void DrawBarrier() {
+    // πÃ∑Œ µµ¬¯¡° ¡¬«• (InitEmotionObjectsø°º≠ ≥÷¿∫ ¿ßƒ°øÕ ∞∞æ∆æﬂ «‘)
+    float bx = (MAZE_W - 2 + 0.5f) * CELL_SIZE;
+    float bz = (MAZE_H - 2 + 0.5f) * CELL_SIZE;
+
+    // ∏∏æ‡ ¿ÃπÃ ∞·∞Ë∞° «ÿ¡¶(collected)µ«æ˙¥Ÿ∏È ±◊∏Æ¡ˆ æ ¿Ω
+    // (∞·∞Ë ø¿∫Í¡ß∆Æ∏¶ √£æ∆º≠ ªÛ≈¬ »Æ¿Œ)
+    for (auto& obj : g_worldObjects) {
+        if (obj.type == 99 && obj.collected) return;
+    }
+
+    glPushMatrix();
+    glTranslatef(bx, 0.0f, bz); // ¿ßƒ° ¿Ãµø
+
+    // °⁄ ≈ı∏Ì √≥∏Æ∏¶ ¿ß«— ∫Ì∑ªµ˘ »∞º∫»≠
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // «œ¥√ªˆ (R:0.5, G:0.8, B:1.0), ≈ı∏Ìµµ(Alpha): 0.5
+    glColor4f(0.5f, 0.8f, 1.0f, 0.5f);
+
+    // ∞·∞Ë ∏æÁ (≈´ ≈•∫Í)
+    glTranslatef(0.0f, 1.5f, 0.0f); // πŸ¥⁄ø°º≠ æ‡∞£ ∂ÁøÚ
+    glScalef(1.8f, 3.0f, 1.8f);     // ≈©±‚ ≈∞øÏ±‚ (±Ê∏∑¿Ω øÎ)
+    glutSolidCube(1.0f);
+
+    // ∫Ì∑ªµ˘ ≤Ù±‚ (¥Ÿ∏• π∞√ºø° øµ«‚ æ» ¡÷∞‘)
+    glDisable(GL_BLEND);
+    glPopMatrix();
+}
+
+// [ªı∑Œ √ﬂ∞°] √‚±∏ ∏∑¥¬ ∫Æ(Gate)∞˙ ±€ææ ±◊∏Æ±‚
+// [ªı∑Œ √ﬂ∞°] ∏∂¿Œ≈©∑°«¡∆Æ √∂ ∞Ò∑Ω ±◊∏Æ±‚
+// ∏∂¿Œ≈©∑°«¡∆Æ √∂ ∞Ò∑Ω ±◊∏Æ±‚ (ºˆ¡§µ : ≈©±‚ √‡º“ π◊ ¿ßƒ° ¡∂¡§)
+// ∏∂¿Œ≈©∑°«¡∆Æ √∂ ∞Ò∑Ω ±◊∏Æ±‚ (ºˆ¡§µ : ≥Ù¿Ã ¿Á¡∂¡§¿∏∑Œ ¥Ÿ∏Æ ≥Î√‚)
+// ∏∂¿Œ≈©∑°«¡∆Æ √∂ ∞Ò∑Ω ±◊∏Æ±‚ (ºˆ¡§µ : «√∑π¿ÃæÓ Ω√º± √ﬂ¿˚)
+void DrawGolem() {
+    int endX = MAZE_W - 2;
+    int endY = MAZE_H - 2;
+
+    for (const auto& obj : g_worldObjects) {
+        if (obj.type == 99) {
+            if (obj.collected) return;
+
+            float gx = (endX + 0.5f) * CELL_SIZE;
+            float gz = (endY + 0.5f) * CELL_SIZE;
+
+            glPushMatrix();
+            glTranslatef(gx, 0.0f, gz); // ∞Ò∑Ω ¿ßƒ°∑Œ ¿Ãµø
+
+            // 1. ≈©±‚ π◊ ≥Ù¿Ã º≥¡§ (¿Ã¿¸∞˙ µø¿œ)
+            glScalef(0.4f, 0.4f, 0.4f);
+            glTranslatef(0.0f, -0.6f, 0.0f);
+
+            // =========================================================
+            // °⁄ [«ŸΩ… ºˆ¡§] «√∑π¿ÃæÓ∏¶ πŸ∂Û∫∏µµ∑œ »∏¿¸ ∞¢µµ ∞ËªÍ
+            // =========================================================
+            // «√∑π¿ÃæÓøÕ ∞Ò∑Ω ªÁ¿Ã¿« ∞≈∏Æ ¬˜¿Ã ∞ËªÍ
+            float dx = camX - gx;
+            float dz = camZ - gz;
+
+            // atan2 «‘ºˆ∑Œ ∞¢µµ(Radian)∏¶ ±∏«œ∞Ì, Degree(µµ)∑Œ ∫Ø»Ø
+            // 180.0f / 3.141592f ¥¬ ∂Ûµæ»¿ª µµ∑Œ πŸ≤Ÿ¥¬ ∞¯Ωƒ¿‘¥œ¥Ÿ.
+            float angle = atan2(dx, dz) * 180.0f / 3.141592f;
+
+            // ∞ËªÍµ» ∞¢µµ∏∏≈≠ Y√‡ »∏¿¸ («◊ªÛ «√∑π¿ÃæÓ∏¶ ∫Ω)
+            glRotatef(angle, 0.0f, 1.0f, 0.0f);
+            // =========================================================
+
+            // --- [¿Ã«œ ∞Ò∑Ω ±◊∏Æ±‚ ƒ⁄µÂ¥¬ 100% µø¿œ«’¥œ¥Ÿ] ---
+
+            // [1] ¥Ÿ∏Æ
+            glColor3f(0.85f, 0.85f, 0.85f);
+            glPushMatrix(); glTranslatef(-0.4f, 0.75f, 0.0f); glScalef(0.6f, 1.5f, 0.6f); glutSolidCube(1.0f); glPopMatrix();
+            glPushMatrix(); glTranslatef(0.4f, 0.75f, 0.0f); glScalef(0.6f, 1.5f, 0.6f); glutSolidCube(1.0f); glPopMatrix();
+
+            // [2] ∏ˆ≈Î
+            glPushMatrix(); glTranslatef(0.0f, 2.0f, 0.0f); glScalef(1.0f, 1.2f, 0.7f); glutSolidCube(1.0f); glPopMatrix();
+            glPushMatrix(); glTranslatef(0.0f, 2.8f, 0.0f); glScalef(1.8f, 0.8f, 0.9f); glutSolidCube(1.0f); glPopMatrix();
+
+            // [3] ∆»
+            glPushMatrix(); glTranslatef(-1.1f, 2.0f, 0.0f); glScalef(0.5f, 2.2f, 0.6f); glutSolidCube(1.0f); glPopMatrix();
+            glPushMatrix(); glTranslatef(1.1f, 2.0f, 0.0f); glScalef(0.5f, 2.2f, 0.6f); glutSolidCube(1.0f); glPopMatrix();
+
+            // [4] ∏”∏Æ
+            glPushMatrix(); glTranslatef(0.0f, 3.5f, -0.1f); glScalef(0.7f, 0.8f, 0.7f); glutSolidCube(1.0f); glPopMatrix();
+
+            // [5] ƒ⁄
+            glPushMatrix(); glTranslatef(0.0f, 3.4f, 0.3f); glScalef(0.2f, 0.4f, 0.2f); glutSolidCube(1.0f); glPopMatrix();
+
+            // [6] ¥´
+            glColor3f(0.8f, 0.0f, 0.0f);
+            glPushMatrix(); glTranslatef(-0.2f, 3.6f, 0.26f); glScalef(0.15f, 0.1f, 0.1f); glutSolidCube(1.0f); glPopMatrix();
+            glPushMatrix(); glTranslatef(0.2f, 3.6f, 0.26f); glScalef(0.15f, 0.1f, 0.1f); glutSolidCube(1.0f); glPopMatrix();
+
+            glPopMatrix(); // ¿¸√º ∫π±∏
+            break;
+        }
+    }
+}
+
+void Display() {
+    if (g_gameState == STATE_CUTSCENE) {
+        DrawNightScene(); glutSwapBuffers(); return;
+    }
+    SetupLighting();
+
+    glClearColor(0.05f, 0.05f, 0.05f, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION); glLoadIdentity();
     gluPerspective(60.0, (float)winWidth / winHeight, 0.1, 100.0);
+    glMatrixMode(GL_MODELVIEW); glLoadIdentity();
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    float dx = cosf(camYaw) * cosf(camPitch);
-    float dy = sinf(camPitch);
-    float dz = sinf(camYaw) * cosf(camPitch);
-
-    gluLookAt(camX, camY, camZ,
-        camX + dx, camY + dy, camZ + dz,
-        0, 1, 0);
+    float dx = cos(camYaw) * cos(camPitch), dy = sin(camPitch), dz = sin(camYaw) * cos(camPitch);
+    gluLookAt(camX, camY, camZ, camX + dx, camY + dy, camZ + dz, 0, 1, 0);
 
     glEnable(GL_TEXTURE_2D);
-
     DrawMaze3D();
-    DrawSORObjects(CELL_SIZE);
+    DrawSORObjects(CELL_SIZE); // ±◊∏≤¿⁄ ∆˜«‘ ±◊∏Æ±‚
+    DrawGolem();
     DrawMiniMap();
-
+    DrawUIMessage();
     glutSwapBuffers();
 }
 
-// -------------------- ÏóÖÎç∞Ïù¥Ìä∏ --------------------
-static void Idle()
-{
+void Idle() {
     static int lastTime = 0;
     int now = glutGet(GLUT_ELAPSED_TIME);
     float dt = (now - lastTime) / 1000.0f;
     if (dt > 0.1f) dt = 0.1f;
     lastTime = now;
 
-    if (g_gameState == STATE_SAD_SCENE)
-    {
+    if (g_slowTimer > 0) g_slowTimer -= dt;
+    if (g_confusionTimer > 0) g_confusionTimer -= dt;
+    if (g_darknessTimer > 0) g_darknessTimer -= dt;
+
+    CheckTrapCollision();
+
+    // °⁄ [√ﬂ∞°] ∏ﬁΩ√¡ˆ ≈∏¿Ã∏” ∞®º“
+    if (g_uiMessageTimer > 0) {
+        g_uiMessageTimer -= dt;
+    }
+
+    if (g_gameState == STATE_CUTSCENE) {
         UpdateCamera(dt);
         g_cutsceneTime += dt;
-
-        if (g_cutsceneTime >= CUTSCENE_DURATION)
-            ReturnToMaze();
+        if (g_cutsceneTime >= CUTSCENE_DURATION) ReturnToMaze();
     }
-    else if (g_gameState == STATE_ANGER_SCENE)
-    {
-        UpdateCamera(dt);
-        AngerMap::Update(dt);
-        g_cutsceneTime += dt;
-
-        if (AngerMap::IsCleared())
-        {
-            AngerMap::Exit();
-            ReturnToMaze();
-        }
-    }
-    else if (g_gameState == STATE_JOY_SCENE)
-    {
-        UpdateCamera(dt);
-        g_cutsceneTime += dt;
-
-        if (g_cutsceneTime >= CUTSCENE_DURATION)
-            ReturnToMaze();
-    }
-    else if (g_gameState == STATE_ENDING)
-    {
-        g_cutsceneTime += dt;
-    }
-    else
-    {
+    else {
         UpdateCamera(dt);
         UpdateJump(dt);
-
-        bool allMain = g_mainCollected[EMO_SADNESS] &&
-            g_mainCollected[EMO_ANGER] &&
-            g_mainCollected[EMO_JOY];
-
-        float exitX = (MAZE_W - 2.0f) * CELL_SIZE;
-        float exitZ = (MAZE_H - 2.0f) * CELL_SIZE;
-
-        float dx = camX - exitX;
-        float dz = camZ - exitZ;
-
-        if (allMain && (dx * dx + dz * dz) < 1.0f)
-        {
-            g_gameState = STATE_ENDING;
-            g_cutsceneTime = 0.0f;
-        }
     }
-
     glutPostRedisplay();
 }
 
-static void Reshape(int w, int h)
-{
-    winWidth = w;
-    winHeight = h;
-    glViewport(0, 0, w, h);
+void Reshape(int w, int h) { winWidth = w; winHeight = h; glViewport(0, 0, w, h); }
+
+// ø¿∫Í¡ß∆Æ πËƒ° (InitEmotionObjects ±∏«ˆ)
+// Main.cpp¿« InitEmotionObjects «‘ºˆ∏¶ ¿Ã∞…∑Œ ±≥√º«œººø‰
+
+void InitEmotionObjects() {
+    // ==========================================
+    // 1. ∏µ® ∑ŒµÂ π◊ æ»¿¸¿Âƒ°
+    // ==========================================
+    int idxSad = LoadAndRegisterModel("sad.txt");
+    int idxAnger = LoadAndRegisterModel("anger.txt");
+    int idxHappy = LoadAndRegisterModel("happy.txt");
+    int idxTrap = LoadAndRegisterModel("trap.txt");
+
+    if (idxSad < 0) idxSad = 0;
+    if (idxAnger < 0) idxAnger = idxSad;
+    if (idxHappy < 0) idxHappy = idxSad;
+
+    // ==========================================
+    // 2. «‘¡§(¿€¿∫ ∞®¡§) ∑£¥˝ πËƒ°
+    // ==========================================
+    for (int i = 0; i < 15; ++i) {
+        int tx, ty;
+        do {
+            tx = rand() % (MAZE_W - 2) + 1;
+            ty = rand() % (MAZE_H - 2) + 1;
+        } while (maze[ty][tx] != PATH);
+
+        int trapType = (rand() % 3) + 1;
+        AddObjectGrid(idxTrap, tx, ty, 1.0f, 0.5f, 0, 5.0f, 0.02f, 0.2f, trapType);
+    }
+
+    // ==========================================
+    // 3. ∞Ê∑Œ √£±‚ (BFS) π◊ ≈´ ∞®¡§ πËƒ°
+    // ==========================================
+    struct Node { int x, z; };
+    std::vector<Node> path;
+    int sx = 1, sz = 1, ex = MAZE_W - 2, ez = MAZE_H - 2;
+    static bool v[MAZE_H][MAZE_W];
+    static Node p[MAZE_H][MAZE_W];
+    for (int i = 0; i < MAZE_H; i++)for (int j = 0; j < MAZE_W; j++) v[i][j] = false;
+
+    std::queue<Node> q; q.push({ sx,sz }); v[sz][sx] = true;
+    bool found = false;
+    int dx[] = { 0,0,-1,1 }, dy[] = { -1,1,0,0 };
+
+    while (!q.empty()) {
+        Node c = q.front(); q.pop();
+        if (c.x == ex && c.z == ez) { found = true; break; }
+        for (int i = 0; i < 4; i++) {
+            int nx = c.x + dx[i], nz = c.z + dy[i];
+            if (nx >= 0 && nx < MAZE_W && nz >= 0 && nz < MAZE_H && !v[nz][nx] && maze[nz][nx] == PATH) {
+                v[nz][nx] = true; p[nz][nx] = c; q.push({ nx,nz });
+            }
+        }
+    }
+
+    if (found) {
+        Node cur = { ex,ez };
+        while (!(cur.x == sx && cur.z == sz)) {
+            path.push_back(cur); cur = p[cur.z][cur.x];
+        }
+        path.push_back({ sx, sz });
+        std::reverse(path.begin(), path.end());
+
+        // 3∞≥¿« ≈´ ∞®¡§ πËƒ°
+        for (int i = 0; i < 3; ++i) {
+            int k = (int)((i + 1) / 4.0f * path.size());
+            if (k < path.size()) {
+                int currentModelIdx = 0;
+                if (i == 0) currentModelIdx = idxSad;    // ΩΩ«ƒ
+                else if (i == 1) currentModelIdx = idxAnger;  // ∫–≥Î
+                else currentModelIdx = idxHappy;  // «‡∫π
+
+                AddObjectGrid(currentModelIdx, path[k].x, path[k].z, 2.0f, 0.6f, 0, 1.5f, 0.01f, 0.3f);
+            }
+        }
+    }
+
+    // ==========================================
+    // 4. [ø©±‚ø° √ﬂ∞°µ !] ∞·∞Ë ø¿∫Í¡ß∆Æ πËƒ° (Type: 99)
+    // ==========================================
+    int endX = MAZE_W - 2;
+    int endY = MAZE_H - 2;
+    // ∏µ® ID¥¬ 0(≈ı∏Ì), Type¿∫ 99(∞·∞Ë)
+    AddObjectGrid(0, endX, endY, 0, 0, 0, 0, 0, 0, 99);
 }
 
-// -------------------- main --------------------
-int main(int argc, char** argv)
-{
-    std::srand((unsigned int)std::time(nullptr));
-
+int main(int argc, char** argv) {
     GenerateMaze();
-    InitEmotionObjects();
+    std::srand((unsigned int)std::time(0));
+    InitEmotionObjects(); // ø©±‚º≠ »£√‚
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(winWidth, winHeight);
-    glutCreateWindow("Emotion.exe : AI Robot Emotion Maze");
+    glutCreateWindow("Emotion Maze: Final Split");
 
     SetupLighting();
-
     GLfloat plane[] = { 0, 1, 0, 0 };
     BuildShadowMatrix((GLfloat(*)[4])g_shadowMatrix, g_lightPos, plane);
 
+    glClearColor(0.05f, 0.05f, 0.05f, 1);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-
     LoadTextures();
-    AngerMap::Init();
 
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
