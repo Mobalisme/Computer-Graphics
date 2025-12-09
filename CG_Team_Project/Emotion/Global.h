@@ -2,6 +2,7 @@
 #include <GL/freeglut.h>
 #include <vector>
 #include <random>
+#include <string>
 
 // ================== 상수 설정 ==================
 const int MAZE_W = 25;
@@ -21,7 +22,16 @@ const float JUMP_SPEED = 4.5f;
 const float BASE_CAM_Y = 0.8f;
 
 enum { ARROW_LEFT = 0, ARROW_RIGHT, ARROW_UP, ARROW_DOWN };
-enum GameState { STATE_PLAYING, STATE_CUTSCENE };
+enum GameState { STATE_MODELER, STATE_PLAYING, STATE_CUTSCENE, STATE_JOY_SCENE, STATE_ENDING };
+
+
+
+
+struct Flower {
+    float x, y, z;
+    float r, g, b;
+    float scale;
+};
 
 // ================== 전역 변수 선언 ==================
 extern int winWidth, winHeight;
@@ -44,21 +54,29 @@ extern float savedCamYaw, savedCamPitch;
 
 extern GLuint g_wallTex;
 extern GLuint g_floorTex;
+extern GLuint g_oceanTex1;
+extern GLuint g_oceanTex2;
 extern std::vector<GLuint> g_videoFrames;
 extern const int VIDEO_FPS;
 
 extern GLfloat g_lightPos[4];
 extern GLfloat g_shadowMatrix[16];
 
-extern std::string g_uiMessage; // 화면에 띄울 메시지 내용
-extern float g_uiMessageTimer;  // 메시지가 떠 있는 시간
+extern std::string g_uiMessage; // 화면 메시지
+extern float g_uiMessageTimer;  // 메시지 타이머
 
-// [NEW] 텍스처 단계 변수
+// ★ [통합] 텍스처 단계 및 함정 변수
 extern int g_textureStage;
-
 extern float g_slowTimer;      // 좌절 (느려짐)
 extern float g_confusionTimer; // 혼란 (벽 꿀렁거림)
 extern float g_darknessTimer;  // 외로움 (어두워짐)
+
+extern std::vector<Flower> g_flowers;
+
+// [NEW] 텍스처 단계 변수
+extern int g_textureStage;
+extern std::vector<GLuint> g_videoSad; // 슬픔 영상
+extern std::vector<GLuint> g_videoJoy; // 기쁨 영상
 
 // ================== 함수 선언 ==================
 void GenerateMaze();
@@ -71,6 +89,7 @@ void InitStars();
 void DrawMaze3D();
 void DrawMiniMap();
 void DrawNightScene();
+void DrawJoyScene();
 
 void UpdateCamera(float dt);
 void UpdateJump(float dt);
@@ -82,3 +101,11 @@ void SpecialUp(int k, int x, int y);
 void ReturnToMaze();
 void TryCollectObject();
 void InitEmotionObjects();
+void InitFlowers();
+void DrawEndingCredits();
+
+void InitModeler();
+void DrawModeler();
+void HandleModelerMouse(int button, int state, int x, int y);
+void HandleModelerMotion(int x, int y);
+void HandleModelerKeyboard(unsigned char key, int x, int y);

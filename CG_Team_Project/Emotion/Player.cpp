@@ -1,32 +1,11 @@
 #include "Global.h"
 #include <cmath>
 #include <cstdlib>
-#include <windows.h> // ★ Shift키 입력을 감지하기 위해 꼭 필요합니다!
 
 void UpdateCamera(float dt) {
     float fx = cos(camYaw), fz = sin(camYaw);
     float rx = -fz, rz = fx;
     float mx = 0, mz = 0;
-
-    // ============================================================
-    // ★ [최종 속도 결정 로직] 
-    // 우선순위: 좌절(1순위) > 달리기(2순위) > 걷기(3순위)
-    // ============================================================
-
-    // 1. 기본 걷기 속도 설정 (2.0f)
-    float baseSpeed = 2.0f;
-
-    // 2. Shift 키를 누르고 있으면 달리기 속도(5.0f)로 변경
-    // (GetAsyncKeyState 함수를 쓰려면 맨 위에 #include <windows.h> 필수!)
-    if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
-        baseSpeed = 3.5f;
-    }
-
-    // 3. 하지만 '좌절' 함정에 걸려있다면? 무조건 0.1f로 고정 (최우선)
-    // (함정에 걸리면 Shift를 눌러도 0.1f가 됩니다)
-    float moveSpeed = (g_slowTimer > 0) ? 0.1f : baseSpeed;
-
-    // ============================================================
 
     if (keyDown['w'] || keyDown['W']) { mx += fx; mz += fz; }
     if (keyDown['s'] || keyDown['S']) { mx -= fx; mz -= fz; }
@@ -41,16 +20,22 @@ void UpdateCamera(float dt) {
     if (camPitch > 1.2f) camPitch = 1.2f;
     if (camPitch < -1.2f) camPitch = -1.2f;
 
+    float currentSpeed = MOVE_SPEED;
+    if (g_slowTimer > 0.0f) {
+        currentSpeed = MOVE_SPEED * 0.25f;
+    }
+
+    if (arrowDown[ARROW_LEFT]) camYaw -= TURN_SPEED_KEY * dt;
+
     float len = sqrt(mx * mx + mz * mz);
     if (len > 0.0001f) {
-        // 위에서 결정한 moveSpeed를 적용하여 이동
-        float nx = camX + (mx / len) * moveSpeed * dt;
-        float nz = camZ + (mz / len) * moveSpeed * dt;
+        float nx = camX + (mx / len) * currentSpeed * dt;
+        float nz = camZ + (mz / len) * currentSpeed * dt;
 
-        if (g_gameState == STATE_CUTSCENE) {
+        if (g_gameState == STATE_CUTSCENE || g_gameState == STATE_JOY_SCENE) {
             camX = nx; camZ = nz;
-            if (keyDown[' ']) camY += moveSpeed * dt;
-            if (keyDown['c'] || keyDown['C']) camY -= moveSpeed * dt;
+            if (keyDown[' ']) camY += currentSpeed * dt;
+            if (keyDown['c'] || keyDown['C']) camY -= currentSpeed * dt;
         }
         else {
             if (!IsBlocked(nx, camZ)) camX = nx;
@@ -75,7 +60,7 @@ void KeyboardDown(unsigned char k, int, int) {
     // TryCollectObject는 Main.cpp에서 처리
     keyDown[k] = true;
 }
-//void KeyboardUp(unsigned char k, int, int) { keyDown[k] = false; }
+void KeyboardUp(unsigned char k, int, int) { keyDown[k] = false; }
 
 void SpecialDown(int k, int, int) {
     if (k == GLUT_KEY_LEFT) arrowDown[ARROW_LEFT] = true;

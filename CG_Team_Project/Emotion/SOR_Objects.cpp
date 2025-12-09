@@ -1,4 +1,4 @@
-ï»¿#include "SOR_Objects.h"
+#include "SOR_Objects.h"
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -9,26 +9,26 @@
 std::vector<SORModel>   g_loadedModels;
 std::vector<GameObject> g_worldObjects;
 
-// [í•µì‹¬] ë‹¨ë©´ë„(x, y) ë°ì´í„°ë¥¼ ì½ì–´ì„œ 3D íšŒì „ì²´(SOR)ë¡œ ë³€í™˜í•˜ëŠ” í•¨ìˆ˜
+// [ÇÙ½É] ´Ü¸éµµ(x, y) µ¥ÀÌÅÍ¸¦ ÀĞ¾î¼­ 3D È¸ÀüÃ¼(SOR)·Î º¯È¯ÇÏ´Â ÇÔ¼ö
 int LoadAndRegisterModel(const char* filename)
 {
     std::ifstream fin(filename);
     if (!fin.is_open()) {
-        std::cout << "[ERROR] íŒŒì¼ì„ ì—´ ìˆ˜ ì—†ìŠµë‹ˆë‹¤: " << filename << std::endl;
+        std::cout << "[ERROR] ÆÄÀÏÀ» ¿­ ¼ö ¾ø½À´Ï´Ù: " << filename << std::endl;
         return -1;
     }
 
     int numPoints = 0;
-    fin >> numPoints; // ì ì˜ ê°œìˆ˜ ì½ê¸°
+    fin >> numPoints; // Á¡ÀÇ °³¼ö ÀĞ±â
     if (numPoints <= 0) {
-        std::cout << "[ERROR] ì  ê°œìˆ˜ ì˜¤ë¥˜: " << filename << std::endl;
+        std::cout << "[ERROR] Á¡ °³¼ö ¿À·ù: " << filename << std::endl;
         return -1;
     }
 
-    struct Point2D { float r, y; }; // r: ì¤‘ì‹¬ì¶• ê±°ë¦¬, y: ë†’ì´
+    struct Point2D { float r, y; }; // r: Áß½ÉÃà °Å¸®, y: ³ôÀÌ
     std::vector<Point2D> profile;
 
-    // 1. 2D ë‹¨ë©´ë„ ì½ê¸°
+    // 1. 2D ´Ü¸éµµ ÀĞ±â
     for (int i = 0; i < numPoints; ++i) {
         Point2D p;
         fin >> p.r >> p.y;
@@ -36,7 +36,7 @@ int LoadAndRegisterModel(const char* filename)
     }
     fin.close();
 
-    // 2. 360ë„ íšŒì „ì‹œì¼œ 3D ëª¨ë¸ ìƒì„± (36ë“±ë¶„ = 10ë„ì”©)
+    // 2. 360µµ È¸Àü½ÃÄÑ 3D ¸ğµ¨ »ı¼º (36µîºĞ = 10µµ¾¿)
     SORModel model;
     int slices = 36;
     model.geometry.resize(numPoints);
@@ -44,15 +44,15 @@ int LoadAndRegisterModel(const char* filename)
     for (int i = 0; i < numPoints; ++i) {
         model.geometry[i].resize(slices + 1);
         for (int j = 0; j <= slices; ++j) {
-            float theta = (float)j / slices * 2.0f * 3.14159265f; // ê°ë„
+            float theta = (float)j / slices * 2.0f * 3.14159265f; // °¢µµ
 
             ModelPoint p;
-            // ì›í†µ ì¢Œí‘œê³„ -> ì§êµ ì¢Œí‘œê³„ ë³€í™˜ (x = r*cos, z = r*sin)
+            // ¿øÅë ÁÂÇ¥°è -> Á÷±³ ÁÂÇ¥°è º¯È¯ (x = r*cos, z = r*sin)
             p.x = profile[i].r * cosf(theta);
             p.y = profile[i].y;
             p.z = profile[i].r * sinf(theta);
 
-            // ìƒ‰ìƒê³¼ ì•ŒíŒŒê°’ì€ ê·¸ë¦´ ë•Œ ê²°ì •í•˜ê±°ë‚˜ ê¸°ë³¸ê°’ ì„¤ì • (í°ìƒ‰)
+            // »ö»ó°ú ¾ËÆÄ°ªÀº ±×¸± ¶§ °áÁ¤ÇÏ°Å³ª ±âº»°ª ¼³Á¤ (Èò»ö)
             p.r = 1.0f; p.g = 1.0f; p.b = 1.0f; p.a = 1.0f;
 
             model.geometry[i][j] = p;
@@ -60,53 +60,61 @@ int LoadAndRegisterModel(const char* filename)
     }
 
     g_loadedModels.push_back(model);
-    std::cout << "[SUCCESS] ëª¨ë¸ ë¡œë“œ ì™„ë£Œ: " << filename << " (ID: " << g_loadedModels.size() - 1 << ")" << std::endl;
+    std::cout << "[SUCCESS] ¸ğµ¨ ·Îµå ¿Ï·á: " << filename << " (ID: " << g_loadedModels.size() - 1 << ")" << std::endl;
     return (int)g_loadedModels.size() - 1;
 }
 
-// ì˜¤ë¸Œì íŠ¸ ì¶”ê°€ (ìƒ‰ìƒ ê¸°ëŠ¥ ì¶”ê°€ë¨!)
-void AddObjectGrid(int modelIdx, int gridX, int gridY, float height, float scale,
-    float initAngle, float rotSpeed, float floatSpeed, float floatRange, int type)
+// ¿ÀºêÁ§Æ® Ãß°¡ (»ö»ó ±â´É Ãß°¡µÊ!)
+void AddObjectGrid(int modelIdx, int gridX, int gridY, float height, float scale, int type)
 {
-    if (modelIdx < 0 || modelIdx >= (int)g_loadedModels.size()) return;
+    if (modelIdx < 0 && type != 99) return;
 
     GameObject obj;
     obj.modelIndex = modelIdx;
-    obj.mazeX = gridX;  
+    obj.mazeX = gridX;
     obj.mazeY = gridY;
     obj.scale = scale;
-    obj.baseAngle = initAngle;
-    obj.rotationSpeed = rotSpeed;
-    obj.currentAngle = 0.0f;
     obj.baseAltitude = height;
-    obj.floatSpeed = floatSpeed;
-    obj.floatRange = floatRange;
-    obj.floatPhase = (float)(std::rand() % 100) * 0.1f;
+
+    // [ÀÚµ¿ ¼³Á¤] ÇÔ¼ö ÀÎÀÚ¿¡¼­ »°À¸¹Ç·Î ¿©±â¼­ Á÷Á¢ °ªÀ» Á¤ÇØÁİ´Ï´Ù.
+    obj.baseAngle = 0.0f;
+    obj.currentAngle = 0.0f;
+    obj.floatPhase = (float)(rand() % 100) * 0.1f;
     obj.collected = false;
     obj.type = type;
 
-    // [ì¤‘ìš”] ëª¨ë¸ ì¸ë±ìŠ¤ì— ë”°ë¼ ìƒ‰ìƒ ìë™ ì§€ì •
-    // 0ë²ˆ(ìŠ¬í””): íŒŒë€ìƒ‰, 1ë²ˆ(ë¶„ë…¸): ë¹¨ê°„ìƒ‰, 2ë²ˆ(í–‰ë³µ): ë…¸ë€/í•‘í¬ìƒ‰
-    if (type == 0) { // ê¸°ì¡´ ê°ì • ì˜¤ë¸Œì íŠ¸ (0, 1, 2ë²ˆ ëª¨ë¸)
-        if (modelIdx % 3 == 0) { obj.r = 0.2f; obj.g = 0.5f; obj.b = 1.0f; } // íŒŒë‘
-        else if (modelIdx % 3 == 1) { obj.r = 1.0f; obj.g = 0.2f; obj.b = 0.2f; } // ë¹¨ê°•
-        else { obj.r = 1.0f; obj.g = 1.0f; obj.b = 0.0f; } // ë…¸ë‘
+    // Å¸ÀÔ¿¡ µû¶ó ¿òÁ÷ÀÓ ¼Óµµ ÀÚµ¿ Á¶Àı
+    if (type == 99) { // °ñ·½Àº ¾È ¿òÁ÷ÀÓ
+        obj.rotationSpeed = 0.0f;
+        obj.floatSpeed = 0.0f;
+        obj.floatRange = 0.0f;
     }
-    else if (type == 1) { // ğŸŸ£ ì¢Œì ˆ (ë³´ë¼ìƒ‰)
-        obj.r = 0.6f; obj.g = 0.0f; obj.b = 0.8f;
+    else if (type != 0) { // ÇÔÁ¤Àº Á» ´õ »¡¸® µ¼
+        obj.rotationSpeed = 5.0f;
+        obj.floatSpeed = 0.05f;
+        obj.floatRange = 0.2f;
     }
-    else if (type == 2) { // ğŸŸ¢ í˜¼ë€ (ì´ˆë¡ìƒ‰)
-        obj.r = 0.2f; obj.g = 0.8f; obj.b = 0.2f;
+    else { // ÀÏ¹İ ¾ÆÀÌÅÛ
+        obj.rotationSpeed = 1.5f;
+        obj.floatSpeed = 0.02f;
+        obj.floatRange = 0.3f;
     }
-    else if (type == 3) { // âš« ì™¸ë¡œì›€ (ê²€ì€ìƒ‰/íšŒìƒ‰)
-        obj.r = 0.3f; obj.g = 0.3f; obj.b = 0.3f;
+
+    // »ö»ó ¼³Á¤
+    if (type == 0) { // ¸ŞÀÎ °¨Á¤
+        if (modelIdx % 3 == 0) { obj.r = 0.2f; obj.g = 0.5f; obj.b = 1.0f; } // ÆÄ¶û
+        else if (modelIdx % 3 == 1) { obj.r = 1.0f; obj.g = 0.2f; obj.b = 0.2f; } // »¡°­
+        else { obj.r = 1.0f; obj.g = 1.0f; obj.b = 0.0f; } // ³ë¶û
     }
+    else if (type == 1) { obj.r = 0.6f; obj.g = 0.0f; obj.b = 0.8f; } // º¸¶ó (ÁÂÀı)
+    else if (type == 2) { obj.r = 0.2f; obj.g = 0.8f; obj.b = 0.2f; } // ÃÊ·Ï (È¥¶õ)
+    else if (type == 3) { obj.r = 0.3f; obj.g = 0.3f; obj.b = 0.3f; } // °ËÁ¤ (¿Ü·Î¿ò)
+    else { obj.r = 1.0f; obj.g = 1.0f; obj.b = 1.0f; }
 
     g_worldObjects.push_back(obj);
-
 }
 
-// ë Œë”ë§ (ë‹¨ì¼ ëª¨ë¸)
+// ·»´õ¸µ (´ÜÀÏ ¸ğµ¨)
 static void DrawSingleModel(const SORModel& model, float r, float g, float b)
 {
     glEnable(GL_BLEND);
@@ -118,11 +126,11 @@ static void DrawSingleModel(const SORModel& model, float r, float g, float b)
             const auto& p0 = model.geometry[i][j];
             const auto& p1 = model.geometry[i + 1][j];
 
-            // ë²•ì„  ë²¡í„° (ì¤‘ì‹¬ì—ì„œ ë°”ê¹¥ìª½ìœ¼ë¡œ)
+            // ¹ı¼± º¤ÅÍ (Áß½É¿¡¼­ ¹Ù±ùÂÊÀ¸·Î)
             glNormal3f(p0.x, 0.0f, p0.z);
 
-            // ì—¬ê¸°ì„œ ìƒ‰ìƒì„ ì ìš©í•©ë‹ˆë‹¤!
-            glColor4f(r, g, b, 1.0f); // íˆ¬ëª…ë„ 1.0
+            // ¿©±â¼­ »ö»óÀ» Àû¿ëÇÕ´Ï´Ù!
+            glColor4f(r, g, b, 1.0f); // Åõ¸íµµ 1.0
             glVertex3f(p0.x, p0.y, p0.z);
 
             glNormal3f(p1.x, 0.0f, p1.z);
@@ -134,10 +142,10 @@ static void DrawSingleModel(const SORModel& model, float r, float g, float b)
     glDisable(GL_BLEND);
 }
 
-// ì „ì²´ ì˜¤ë¸Œì íŠ¸ ë° ê·¸ë¦¼ì ê·¸ë¦¬ê¸°
+// ÀüÃ¼ ¿ÀºêÁ§Æ® ¹× ±×¸²ÀÚ ±×¸®±â
 void DrawSORObjects(float cellSize)
 {
-    extern GLfloat g_shadowMatrix[16]; // ê·¸ë¦¼ì í–‰ë ¬
+    extern GLfloat g_shadowMatrix[16]; // ±×¸²ÀÚ Çà·Ä
 
     glDisable(GL_TEXTURE_2D);
 
@@ -153,18 +161,18 @@ void DrawSORObjects(float cellSize)
         float wy = obj.baseAltitude + floatOffset;
         float wz = (obj.mazeY + 0.5f) * cellSize;
 
-        // 1. ë³¸ì²´ ê·¸ë¦¬ê¸° (ìƒ‰ìƒ ì ìš©)
+        // 1. º»Ã¼ ±×¸®±â (»ö»ó Àû¿ë)
         glEnable(GL_LIGHTING);
         glPushMatrix();
         glTranslatef(wx, wy, wz);
         glRotatef(obj.baseAngle + obj.currentAngle, 0, 1, 0);
         glScalef(obj.scale, obj.scale, obj.scale);
 
-        // ìƒ‰ìƒ ì „ë‹¬ (obj.r, obj.g, obj.b)
+        // »ö»ó Àü´Ş (obj.r, obj.g, obj.b)
         DrawSingleModel(g_loadedModels[obj.modelIndex], obj.r, obj.g, obj.b);
         glPopMatrix();
 
-        // 2. ê·¸ë¦¼ì ê·¸ë¦¬ê¸°
+        // 2. ±×¸²ÀÚ ±×¸®±â
         glDisable(GL_LIGHTING);
         glPushMatrix();
         glTranslatef(0.0f, 0.01f, 0.0f);
@@ -173,7 +181,7 @@ void DrawSORObjects(float cellSize)
         glRotatef(obj.baseAngle + obj.currentAngle, 0, 1, 0);
         glScalef(obj.scale, obj.scale, obj.scale);
 
-        // ê·¸ë¦¼ìëŠ” ê²€ì€ìƒ‰ìœ¼ë¡œ
+        // ±×¸²ÀÚ´Â °ËÀº»öÀ¸·Î
         DrawSingleModel(g_loadedModels[obj.modelIndex], 0.0f, 0.0f, 0.0f);
         glPopMatrix();
         glEnable(GL_LIGHTING);
